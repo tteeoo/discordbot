@@ -15,8 +15,8 @@ import datetime
 import math
 
 TOKEN = 'NTUxNTE1MTU1MzAxNjYyNzIz.D1yGTQ.G1q57WPSIVjNVkdVdY3GJBeoNMA'
-os.chdir(r'/home/theo/discordbot')
-#os.chdir(r'C:\Users\wolfe\Desktop\git\discordbot')
+#os.chdir(r'/home/theo/discordbot')
+os.chdir(r'C:\Users\wolfe\Desktop\git\discordbot')
 
 client = commands.Bot(command_prefix = '.')
 client.remove_command('help')
@@ -51,6 +51,7 @@ async def on_message(message):
     author = message.author
     content = message.content
     print('Message sent: {}: {}: {}: {}'.format(server, channel, author, content))
+    await client.change_presence(game=discord.Game(name='.help on ' + str(len(client.servers)) + ' servers'))
     await client.process_commands(message)
     with open('users.json', 'r') as f:
         users = json.load(f)
@@ -64,13 +65,13 @@ async def on_message(message):
             e = round(2 / users[author.id]['points'] * 20 + 1)
         await add_points(users, message.author, e)
 
-    if(users['lottery']['start'] == int(currentTime)-12):
-        entered=users['lottery']['entered'].split(" ")
-        selected = random.randint(0,len(entered))
-        winner=entered[selected]
-        await client.send_message(winner, "You won the lottery for {} points".format(str(users['lottery']['pot'])))
-        users[winner]['points']+=users['lottery']['pot']
-        users['lottery']['start']=currentTime
+    #if(users['lottery']['start'] == int(currentTime)-12):
+    #    entered=users['lottery']['entered'].split(" ")
+    #    selected = random.randint(0,len(entered))
+    #    winner=entered[selected]
+    #    await client.send_message(winner, "You won the lottery for {} points".format(str(users['lottery']['pot'])))
+    #    users[winner]['points']+=users['lottery']['pot']
+    #    users['lottery']['start']=currentTime
 
     with open('users.json', 'w') as f:
         json.dump(users, f)
@@ -120,7 +121,20 @@ async def debug(ctx, debugparams):
     if(ctx.message.author.id == '258771223473815553'):
         await client.say('Results: {}'.format(eval(debugparams)))
     else:
-        await client.say('Error')
+        await client.say('Error code 403')
+    with open('users.json', 'w') as f:
+         json.dump(users, f)
+
+#give
+@client.command(pass_context=True)
+async def give(ctx, amount, user: discord.Member):
+    with open('users.json', 'r') as f:
+        users = json.load(f)
+    if(ctx.message.author.id == '258771223473815553'):
+        users[user.id]['points']+= int(amount)
+        users[user.id]['total']+= int(amount)
+    else:
+        await client.say('Error code 403')
     with open('users.json', 'w') as f:
          json.dump(users, f)
 
@@ -175,7 +189,7 @@ async def vote(ctx):
         users[user.id]['vote'] = int(currentTime)
 
     else:
-        await client.say('{}, you can only vote every 12 hours'.format(ctx.message.author.mention))
+        await client.say('{}, you can only vote once every 12 hours'.format(ctx.message.author.mention))
 
 
     with open('users.json', 'w') as f:
@@ -272,6 +286,16 @@ async def ping(ctx):
     ms = (t.timestamp-ctx.message.timestamp).total_seconds() * 1000
     await client.edit_message(t, new_content="{} rngBot's latency is: {}ms".format(user.mention, int(ms)))
 
+#about
+@client.command(pass_context=True)
+async def about(ctx):
+    user = ctx.message.author
+    await client.send_message(user, "{}, Here's some information on rngBot: \n rngBot was started on March 1st, 2019 by teo#9288.".format(user.mention))
+    await client.send_message(user, "Join the rngBot Official Server: https://discord.gg/cfGYYfw")
+    await client.send_message(user, "Invite rngBot: https://discordapp.com/oauth2/authorize?client_id=551515155301662723&permissions=8&scope=bot")
+    await client.send_message(user, "Bot listings: https://discordbots.org/bot/551515155301662723\nhttps://discordbotlist.com/bots/551515155301662723\nhttps://divinediscordbots.com/bots/551515155301662723")
+
+
 #pay
 @client.command(pass_context=True)
 async def pay(ctx, amnt, member: discord.Member):
@@ -327,12 +351,28 @@ async def top(ctx):
         x+=1
     thirdp = str(order2[2])[2:x+2]
 
+    fourthp = str(order2[3])[2:]
+    x = 0
+    while(1==1):
+        if (fourthp[x] == "'"):
+            break
+        x+=1
+    fourthp = str(order2[3])[2:x+2]
+
+    fivep = str(order2[4])[2:]
+    x = 0
+    while(1==1):
+        if (fivep[x] == "'"):
+            break
+        x+=1
+    fivep = str(order2[4])[2:x+2]
 
 
-    await client.say("{}, The top players are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', users[firstp]['points'], '<@' + secondp + '>',  users[secondp]['points'], '<@' + thirdp + '>', users[thirdp]['points']))
+    await client.say("{}, The top players are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', users[firstp]['points'], '<@' + secondp + '>',  users[secondp]['points'], '<@' + thirdp + '>', users[thirdp]['points'], '<@' + fourthp + '>', users[fourthp]['points'], '<@' + fivep + '>', users[fivep]['points']))
 
     with open('users.json', 'w') as f:
         json.dump(users, f)
+
 
 
 #help
@@ -353,7 +393,8 @@ async def help(ctx):
     embed.add_field(name='.flip (amount)', value='Flips a coin to decide if you win or lose an amount of points (1/2) win chance)',inline=False)
     embed.add_field(name='.flip2 (amount)', value='Flips a 10-sided coin to decide if you win or lose the squared amount of points (1/10 win chance)',inline=False)
     embed.add_field(name='.flip3 (amount)', value='Flips a 4-sided coin to decide if you win the amount of points divided by 3 or lose the amount of points (3/4 win chance)',inline=False)
-    embed.add_field(name='.vote', value="Vote for rngBot and get 5000 points",inline=False)
+    embed.add_field(name='.vote', value="Vote for rngBot and get 5000 points very 12 hours",inline=False)
+    embed.add_field(name='.about', value="Some information about rngBot",inline=False)
 
     await client.send_message(author, 'Join the rngBot Official Server: https://discord.gg/cfGYYfw')
     await client.send_message(author, embed=embed)
