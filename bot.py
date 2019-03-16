@@ -10,14 +10,13 @@ import os
 import random
 from operator import itemgetter
 from collections import OrderedDict
-import dbl
 import socket
 import datetime
 import math
 
 TOKEN = 'NTUxNTE1MTU1MzAxNjYyNzIz.D1yGTQ.G1q57WPSIVjNVkdVdY3GJBeoNMA'
-#os.chdir(r'/home/theo/rngBOT')
-os.chdir(r'C:\Users\wolfe\Desktop\git\rngBOT')
+os.chdir(r'/home/theo/discordbot')
+#os.chdir(r'C:\Users\wolfe\Desktop\git\discordbot')
 
 client = commands.Bot(command_prefix = '.')
 client.remove_command('help')
