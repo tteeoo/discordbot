@@ -13,10 +13,12 @@ from collections import OrderedDict
 import socket
 import datetime
 import math
+import sys
 
+sys.setrecursionlimit(100000)
 TOKEN = 'NTUxNTE1MTU1MzAxNjYyNzIz.D1yGTQ.G1q57WPSIVjNVkdVdY3GJBeoNMA'
-os.chdir(r'/home/theo/discordbot')
-#os.chdir(r'C:\Users\wolfe\Desktop\git\discordbot')
+#s.chdir(r'/home/theo/discordbot')
+os.chdir(r'C:\Users\wolfe\Desktop\git\discordbot')
 
 client = commands.Bot(command_prefix = '.')
 client.remove_command('help')
@@ -51,7 +53,6 @@ async def on_message(message):
     author = message.author
     content = message.content
     print('Message sent: {}: {}: {}: {}'.format(server, channel, author, content))
-    await client.change_presence(game=discord.Game(name='.help on ' + str(len(client.servers)) + ' servers'))
     await client.process_commands(message)
     with open('users.json', 'r') as f:
         users = json.load(f)
@@ -120,6 +121,7 @@ async def debug(ctx, debugparams):
         users = json.load(f)
     if(ctx.message.author.id == '258771223473815553'):
         await client.say('Results: {}'.format(eval(debugparams)))
+
     else:
         await client.say('Error code 403')
     with open('users.json', 'w') as f:
@@ -130,9 +132,11 @@ async def debug(ctx, debugparams):
 async def give(ctx, amount, user: discord.Member):
     with open('users.json', 'r') as f:
         users = json.load(f)
-    if(ctx.message.author.id == '258771223473815553'):
+    author = ctx.message.author
+    if "give" in [y.name.lower() for y in author.roles]:
         users[user.id]['points']+= int(amount)
         users[user.id]['total']+= int(amount)
+        await client.say('{}, gave {} points to {}'.format(author.mention, amount, user.mention))
     else:
         await client.say('Error code 403')
     with open('users.json', 'w') as f:
@@ -373,6 +377,71 @@ async def top(ctx):
     with open('users.json', 'w') as f:
         json.dump(users, f)
 
+#servertop
+@client.command(pass_context=True)
+async def servertop(ctx):
+    user = ctx.message.author
+    server = ctx.message.server
+    with open('users.json', 'r') as f:
+        users = json.load(f)
+    q=0
+    serverMem = list()
+    serverPoints = list()
+    d = dict()
+    for member in server.members:
+        serverMem.append(member.id)
+    for x in serverMem:
+        serverPoints.append(users[x]['points'])
+    while(int(q)<int(len(serverMem))):
+        d.update( {str(serverMem[q]) : int(serverPoints[q])} )
+        q=q+1
+    order2 = sorted(d.items(), key=lambda val: val[1], reverse=True)
+    firstp = str(order2[0])[2:]
+    x = 0
+    while(1==1):
+        if (firstp[x] == "'"):
+            break
+        x+=1
+    firstp = str(order2[0])[2:x+2]
+
+    secondp = str(order2[1])[2:]
+    x = 0
+    while(1==1):
+        if (secondp[x] == "'"):
+            break
+        x+=1
+    secondp = str(order2[1])[2:x+2]
+
+    thirdp = str(order2[2])[2:]
+    x = 0
+    while(1==1):
+        if (thirdp[x] == "'"):
+            break
+        x+=1
+    thirdp = str(order2[2])[2:x+2]
+
+    fourthp = str(order2[3])[2:]
+    x = 0
+    while(1==1):
+        if (fourthp[x] == "'"):
+            break
+        x+=1
+    fourthp = str(order2[3])[2:x+2]
+
+    fivep = str(order2[4])[2:]
+    x = 0
+    while(1==1):
+        if (fivep[x] == "'"):
+            break
+        x+=1
+    fivep = str(order2[4])[2:x+2]
+
+
+    await client.say("{}, The top players on your server are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', users[firstp]['points'], '<@' + secondp + '>',  users[secondp]['points'], '<@' + thirdp + '>', users[thirdp]['points'], '<@' + fourthp + '>', users[fourthp]['points'], '<@' + fivep + '>', users[fivep]['points']))
+
+    with open('users.json', 'w') as f:
+        json.dump(users, f)
+
 
 
 #help
@@ -389,7 +458,8 @@ async def help(ctx):
     embed.add_field(name='.pay (amount) (person)', value='Pays an amount of points to a person',inline=False)
     embed.add_field(name='.lookup (person)', value="Looks up a different person's balance",inline=False)
     embed.add_field(name='.ping', value="Checks rngBot's latency",inline=False)
-    embed.add_field(name='.top', value="Shows the top 3 players",inline=False)
+    embed.add_field(name='.top', value="Shows the top 5 players",inline=False)
+    embed.add_field(name='.servertop', value="Shows the top 5 players just on your server",inline=False)
     embed.add_field(name='.flip (amount)', value='Flips a coin to decide if you win or lose an amount of points (1/2) win chance)',inline=False)
     embed.add_field(name='.flip2 (amount)', value='Flips a 10-sided coin to decide if you win or lose the squared amount of points (1/10 win chance)',inline=False)
     embed.add_field(name='.flip3 (amount)', value='Flips a 4-sided coin to decide if you win the amount of points divided by 3 or lose the amount of points (3/4 win chance)',inline=False)
