@@ -17,8 +17,8 @@ import sys
 
 sys.setrecursionlimit(100000)
 TOKEN = 'NTUxNTE1MTU1MzAxNjYyNzIz.D1yGTQ.G1q57WPSIVjNVkdVdY3GJBeoNMA'
-#s.chdir(r'/home/theo/discordbot')
-os.chdir(r'C:\Users\wolfe\Desktop\git\discordbot')
+os.chdir(r'/home/theo/discordbot')
+#os.chdir(r'C:\Users\wolfe\Desktop\git\discordbot')
 
 client = commands.Bot(command_prefix = '.')
 client.remove_command('help')
@@ -133,7 +133,7 @@ async def give(ctx, amount, user: discord.Member):
     with open('users.json', 'r') as f:
         users = json.load(f)
     author = ctx.message.author
-    if "give" in [y.name.lower() for y in author.roles]:
+    if author.id==258771223473615553
         users[user.id]['points']+= int(amount)
         users[user.id]['total']+= int(amount)
         await client.say('{}, gave {} points to {}'.format(author.mention, amount, user.mention))
