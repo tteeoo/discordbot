@@ -17,8 +17,8 @@ import sys
 
 sys.setrecursionlimit(100000)
 TOKEN = 'NTUxNTE1MTU1MzAxNjYyNzIz.D1yGTQ.G1q57WPSIVjNVkdVdY3GJBeoNMA'
-os.chdir(r'/home/theo/discordbot')
-#os.chdir(r'C:\Users\wolfe\Desktop\git\discordbot')
+#os.chdir(r'/home/theo/discordbot')
+os.chdir(r'C:\Users\wolfe\Desktop\git\discordbot')
 
 client = commands.Bot(command_prefix = '.')
 client.remove_command('help')
@@ -133,7 +133,7 @@ async def give(ctx, amount, user: discord.Member):
     with open('users.json', 'r') as f:
         users = json.load(f)
     author = ctx.message.author
-    if author.id==258771223473615553
+    if(ctx.message.author.id == '258771223473815553'):
         users[user.id]['points']+= int(amount)
         users[user.id]['total']+= int(amount)
         await client.say('{}, gave {} points to {}'.format(author.mention, amount, user.mention))
@@ -411,33 +411,48 @@ async def servertop(ctx):
             break
         x+=1
     secondp = str(order2[1])[2:x+2]
+    if(len(order2)>=3):
+        thirdp = str(order2[2])[2:]
+        x = 0
+        while(1==1):
+            if (thirdp[x] == "'"):
+                break
+            x+=1
+        thirdp = str(order2[2])[2:x+2]
 
-    thirdp = str(order2[2])[2:]
-    x = 0
-    while(1==1):
-        if (thirdp[x] == "'"):
-            break
-        x+=1
-    thirdp = str(order2[2])[2:x+2]
+    if(len(order2)>=4):
+        fourthp = str(order2[3])[2:]
+        x = 0
+        while(1==1):
+            if (fourthp[x] == "'"):
+                break
+            x+=1
+        fourthp = str(order2[3])[2:x+2]
 
-    fourthp = str(order2[3])[2:]
-    x = 0
-    while(1==1):
-        if (fourthp[x] == "'"):
-            break
-        x+=1
-    fourthp = str(order2[3])[2:x+2]
+    if(len(order2)>=5):
+        fivep = str(order2[4])[2:]
+        x = 0
+        while(1==1):
+            if (fivep[x] == "'"):
+                break
+            x+=1
+        fivep = str(order2[4])[2:x+2]
 
-    fivep = str(order2[4])[2:]
-    x = 0
-    while(1==1):
-        if (fivep[x] == "'"):
-            break
-        x+=1
-    fivep = str(order2[4])[2:x+2]
+    try:
+        if(len(order2)==2):
+            await client.say("{}, The top players on your server are: \n \n {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', users[firstp]['points'], '<@' + secondp + '>',  users[secondp]['points']))
+        if(len(order2)==3):
+            await client.say("{}, The top players on your server are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points".format(user.mention, '<@' + firstp + '>', users[firstp]['points'], '<@' + secondp + '>',  users[secondp]['points'], '<@' + thirdp + '>', users[thirdp]['points']))
+        if(len(order2)==4):
+            await client.say("{}, The top players on your server are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', users[firstp]['points'], '<@' + secondp + '>',  users[secondp]['points'], '<@' + thirdp + '>', users[thirdp]['points'], '<@' + fourthp + '>', users[fourthp]['points']))
+        if(len(order2)>=5):
+            await client.say("{}, The top players on your server are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', users[firstp]['points'], '<@' + secondp + '>',  users[secondp]['points'], '<@' + thirdp + '>', users[thirdp]['points'], '<@' + fourthp + '>', users[fourthp]['points'], '<@' + fivep + '>', users[fivep]['points']))
 
 
-    await client.say("{}, The top players on your server are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', users[firstp]['points'], '<@' + secondp + '>',  users[secondp]['points'], '<@' + thirdp + '>', users[thirdp]['points'], '<@' + fourthp + '>', users[fourthp]['points'], '<@' + fivep + '>', users[fivep]['points']))
+    except KeyError:
+        await client.say("KeyError")
+    except HTTPException:
+        await client.say("HTTPException")
 
     with open('users.json', 'w') as f:
         json.dump(users, f)
