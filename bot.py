@@ -17,8 +17,8 @@ import sys
 
 sys.setrecursionlimit(100000)
 TOKEN = 'NTUxNTE1MTU1MzAxNjYyNzIz.D1yGTQ.G1q57WPSIVjNVkdVdY3GJBeoNMA'
-#os.chdir(r'/home/theo/discordbot')
-os.chdir(r'C:\Users\wolfe\Desktop\git\discordbot')
+os.chdir(r'/home/theo/discordbot')
+#os.chdir(r'C:\Users\wolfe\Desktop\git\discordbot')
 
 client = commands.Bot(command_prefix = '.')
 client.remove_command('help')
