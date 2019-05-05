@@ -14,11 +14,15 @@ import socket
 import datetime
 import math
 import sys
+import platform
 
 sys.setrecursionlimit(100000)
 TOKEN = 'NTUxNTE1MTU1MzAxNjYyNzIz.D1yGTQ.G1q57WPSIVjNVkdVdY3GJBeoNMA'
-os.chdir(r'/home/theo/discordbot')
-#os.chdir(r'C:\Users\wolfe\Desktop\git\discordbot')
+
+if(platform.system() == 'Linux'):
+    os.chdir(r'/home/theo/discordbot')
+else:
+    os.chdir(r'C:\Users\wolfe\Desktop\git\discordbot')
 
 client = commands.Bot(command_prefix = '.')
 client.remove_command('help')
@@ -389,8 +393,7 @@ async def servertop(ctx):
     serverPoints = list()
     d = dict()
     for member in server.members:
-        if(member in users):
-            serverMem.append(member.id)
+        serverMem.append(member.id)
     for x in serverMem:
         serverPoints.append(users[x]['points'])
     while(int(q)<int(len(serverMem))):
