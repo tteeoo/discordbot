@@ -389,7 +389,8 @@ async def servertop(ctx):
     serverPoints = list()
     d = dict()
     for member in server.members:
-        serverMem.append(member.id)
+        if(member in users):
+            serverMem.append(member.id)
     for x in serverMem:
         serverPoints.append(users[x]['points'])
     while(int(q)<int(len(serverMem))):
