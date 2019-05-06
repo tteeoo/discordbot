@@ -122,8 +122,8 @@ async def update_data(users, user):
         users[user.id]['points'] = 500
         users[user.id]['total'] = 500
         users[user.id]['vote'] = int(currentTime)-12
-    if not 'vote' in users[user.id]:
-        users[user.id]['vote'] = int(currentTime)-12
+        users[user.id]['lastvote'] = currentDT.day - 1
+        users[user.id]['streak'] = 0
 #add_points
 async def add_points(users, user, pnts):
     users[user.id]['points'] += pnts
@@ -136,7 +136,8 @@ async def bal(ctx):
     with open('users.json', 'r') as f:
         users = json.load(f)
 
-    await update_data(users, ctx.message.author)
+    if not user.id in users:
+        await update_data(users, ctx.message.author)
     await client.say('{}, you have {} points and {} total earnings'.format(user.mention, users[user.id]['points'], users[user.id]['total']))
 
     with open('users.json', 'w') as f:
@@ -170,6 +171,7 @@ async def give(ctx, amount, user: discord.Member):
         await client.say('Error code 403')
     with open('users.json', 'w') as f:
          json.dump(users, f)
+
 
 #lookup
 @client.command(pass_context=True)
@@ -212,17 +214,41 @@ async def vote(ctx):
     with open('users.json', 'r') as f:
         users = json.load(f)
     user = ctx.message.author
+    if not user.id in users:
+        await update_data(users, ctx.message.author)
     currentDT = datetime.datetime.now()
     currentTime = str(currentDT.year)+str(currentDT.month)+str(currentDT.day)+str(currentDT.hour)
 
     if(abs(int(currentTime)-users[user.id]['vote'])>=12):
-        await client.say('{}, vote for rngBot here every 12 hours: https://discordbots.org/bot/551515155301662723/vote, and get 5000 points'.format(ctx.message.author.mention))
-        users[user.id]['points']+= 5000
-        users[user.id]['total']+= 5000
+        if(users[user.id]['streak'] == 0):
+            prize = 1000
+        if(users[user.id]['streak'] == 1):
+            prize = 5000
+        if(users[user.id]['streak'] == 2):
+            prize = 10000
+        if(users[user.id]['streak'] == 3):
+            prize = 30000
+        if(users[user.id]['streak'] == 4):
+            prize = 50000
+        if(users[user.id]['streak'] >= 5):
+            prize = 100000
+        await client.say('{}, vote for rngBot here every 12 hours: https://discordbots.org/bot/551515155301662723/vote, and get {} points'.format(ctx.message.author.mention, prize))
+        if(users[user.id]['lastvote'] == currentDT.day - 1):
+            users[user.id]['points']+= prize
+            users[user.id]['total']+= prize
+            users[user.id]['streak'] += 1
+
+        else:
+            users[user.id]['streak'] = 0
+            users[user.id]['points']+= prize
+            users[user.id]['total']+= prize
         users[user.id]['vote'] = int(currentTime)
+        users[user.id]['lastvote'] = currentDT.day
 
     else:
         await client.say('{}, you can only vote once every 12 hours'.format(ctx.message.author.mention))
+
+
 
 
     with open('users.json', 'w') as f:
@@ -236,6 +262,8 @@ async def flip(ctx, amnt):
         user = ctx.message.author
         with open('users.json', 'r') as f:
             users = json.load(f)
+        if not user.id in users:
+            await update_data(users, ctx.message.author)
         e = random.randint(1,2)
         if(int(amnt)<=users[user.id]['points']):
             if(e == 1):
@@ -260,6 +288,8 @@ async def flip3(ctx, amnt):
     if(int(amnt)>0):
         with open('users.json', 'r') as f:
             users = json.load(f)
+        if not user.id in users:
+            await update_data(users, ctx.message.author)
         e = random.randint(1,4)
         if(int(amnt)<=users[user.id]['points']):
             if(e == 1):
@@ -291,6 +321,8 @@ async def flip2(ctx, amnt):
     if(int(amnt)>0):
         with open('users.json', 'r') as f:
             users = json.load(f)
+        if not user.id in users:
+            await update_data(users, ctx.message.author)
         e = random.randint(1,10)
         if(int(amnt)<=users[user.id]['points']):
             if(e == 1):
@@ -337,6 +369,8 @@ async def pay(ctx, amnt, member: discord.Member):
         user = ctx.message.author
         with open('users.json', 'r') as f:
             users = json.load(f)
+        if not user.id in users:
+            await update_data(users, ctx.message.author)
         if(int(amnt)<=users[user.id]['points']):
             users[ctx.message.author.id]['points'] -= int(amnt)
             users[member.id]['points'] += int(amnt)
@@ -499,7 +533,7 @@ async def help(ctx):
     )
 
     embed.set_author(name='rngBot commands')
-    embed.add_field(name='.bal', value="Shows your current balance, and creates one if you don't have one. (You must do this command before gambling)",inline=False)
+    embed.add_field(name='.bal', value="Shows your current balance.",inline=False)
     embed.add_field(name='.pay (amount) (person)', value='Pays an amount of points to a person',inline=False)
     embed.add_field(name='.lookup (person)', value="Looks up a different person's balance",inline=False)
     embed.add_field(name='.ping', value="Checks rngBot's latency",inline=False)
@@ -508,7 +542,7 @@ async def help(ctx):
     embed.add_field(name='.flip (amount)', value='Flips a coin to decide if you win or lose an amount of points (1/2) win chance)',inline=False)
     embed.add_field(name='.flip2 (amount)', value='Flips a 10-sided coin to decide if you win or lose the squared amount of points (1/10 win chance)',inline=False)
     embed.add_field(name='.flip3 (amount)', value='Flips a 4-sided coin to decide if you win the amount of points divided by 3 or lose the amount of points (3/4 win chance)',inline=False)
-    embed.add_field(name='.vote', value="Vote for rngBot and get 5000 points very 12 hours",inline=False)
+    embed.add_field(name='.vote', value="Vote for rngBot and get points very 12 hours",inline=False)
     embed.add_field(name='.about', value="Some information about rngBot",inline=False)
 
     await client.send_message(author, 'Join the rngBot Official Server: https://discord.gg/cfGYYfw')
