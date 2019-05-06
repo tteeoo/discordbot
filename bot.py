@@ -16,7 +16,6 @@ import datetime
 import math
 import sys
 import platform
-import dbl
 
 sys.setrecursionlimit(100000)
 TOKEN = 'NTUxNTE1MTU1MzAxNjYyNzIz.D1yGTQ.G1q57WPSIVjNVkdVdY3GJBeoNMA'
@@ -34,31 +33,6 @@ currentTime = str(currentDT.year)+str(currentDT.month)+str(currentDT.day)+str(cu
 
 lamb = "to the slaughter"
 
-class DiscordBotsOrgAPI:
-    """Handles interactions with the discordbots.org API"""
-
-    def __init__(self, bot):
-        self.bot = client
-        self.token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjU1MTUxNTE1NTMwMTY2MjcyMyIsImJvdCI6dHJ1ZSwiaWF0IjoxNTUyMzM2MTU0fQ.Z89vrD9dNfPwD_uR7ZMtRzXvg1zjMPYeozu2JAlHyYE'  #  set this to your DBL token
-        self.dblpy = dbl.Client(self.bot, self.token)
-        self.bot.loop.create_task(self.update_stats())
-
-    async def update_stats(self):
-        """This function runs every 30 minutes to automatically update your server count"""
-
-        while True:
-            logger.info('attempting to post server count')
-            try:
-                await self.dblpy.post_server_count()
-                logger.info('posted server count ({})'.format(len(self.bot.guilds)))
-            except Exception as e:
-                logger.exception('Failed to post server count\n{}: {}'.format(type(e).__name__, e))
-            await asyncio.sleep(1800)
-
-def setup(bot):
-    global logger
-    logger = logging.getLogger('bot')
-    bot.add_cog(DiscordBotsOrgAPI(bot))
 
 @client.event
 async def on_ready():
