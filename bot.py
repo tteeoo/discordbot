@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 import asyncio
 import aiohttp
+import logging
 import random
 from itertools import cycle
 import time
@@ -15,6 +16,7 @@ import datetime
 import math
 import sys
 import platform
+import dbl
 
 sys.setrecursionlimit(100000)
 TOKEN = 'NTUxNTE1MTU1MzAxNjYyNzIz.D1yGTQ.G1q57WPSIVjNVkdVdY3GJBeoNMA'
@@ -27,10 +29,36 @@ else:
 client = commands.Bot(command_prefix = '.')
 client.remove_command('help')
 
-penis = 'long'
-sam = 'pussy boi'
 currentDT = datetime.datetime.now()
 currentTime = str(currentDT.year)+str(currentDT.month)+str(currentDT.day)+str(currentDT.hour)
+
+lamb = "to the slaughter"
+
+class DiscordBotsOrgAPI:
+    """Handles interactions with the discordbots.org API"""
+
+    def __init__(self, bot):
+        self.bot = client
+        self.token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjU1MTUxNTE1NTMwMTY2MjcyMyIsImJvdCI6dHJ1ZSwiaWF0IjoxNTUyMzM2MTU0fQ.Z89vrD9dNfPwD_uR7ZMtRzXvg1zjMPYeozu2JAlHyYE'  #  set this to your DBL token
+        self.dblpy = dbl.Client(self.bot, self.token)
+        self.bot.loop.create_task(self.update_stats())
+
+    async def update_stats(self):
+        """This function runs every 30 minutes to automatically update your server count"""
+
+        while True:
+            logger.info('attempting to post server count')
+            try:
+                await self.dblpy.post_server_count()
+                logger.info('posted server count ({})'.format(len(self.bot.guilds)))
+            except Exception as e:
+                logger.exception('Failed to post server count\n{}: {}'.format(type(e).__name__, e))
+            await asyncio.sleep(1800)
+
+def setup(bot):
+    global logger
+    logger = logging.getLogger('bot')
+    bot.add_cog(DiscordBotsOrgAPI(bot))
 
 @client.event
 async def on_ready():
@@ -43,7 +71,6 @@ async def on_member_join(member):
     with open('users.json', 'r') as f:
         users = json.load(f)
 
-    await update_data(users, member)
 
     with open('users.json', 'w') as f:
         json.dump(users, f)
@@ -56,14 +83,11 @@ async def on_message(message):
     channel = message.channel
     author = message.author
     content = message.content
-    print('Message sent: {}: {}: {}: {}'.format(server, channel, author, content))
+    #print('Message sent: {}: {}: {}: {}'.format(server, channel, author, content))
     await client.process_commands(message)
     with open('users.json', 'r') as f:
         users = json.load(f)
-    if(message.content.startswith('.')):
-            await update_data(users, message.author)
-    else:
-        await update_data(users, message.author)
+    if(author.id in users):
         if(users[author.id]['points'] == 0):
             e = 20
         else:
@@ -88,7 +112,7 @@ async def on_message_delete(message):
     channel = message.channel
     author = message.author
     content = message.content
-    print('Message deleted: {}: {}: {}: {}'.format(server, channel, author, content))
+    #print('Message deleted: {}: {}: {}: {}'.format(server, channel, author, content))
 
 
 #update_data
@@ -112,6 +136,7 @@ async def bal(ctx):
     with open('users.json', 'r') as f:
         users = json.load(f)
 
+    await update_data(users, ctx.message.author)
     await client.say('{}, you have {} points and {} total earnings'.format(user.mention, users[user.id]['points'], users[user.id]['total']))
 
     with open('users.json', 'w') as f:
@@ -393,7 +418,8 @@ async def servertop(ctx):
     serverPoints = list()
     d = dict()
     for member in server.members:
-        serverMem.append(member.id)
+        if(member.id in users):
+            serverMem.append(member.id)
     for x in serverMem:
         serverPoints.append(users[x]['points'])
     while(int(q)<int(len(serverMem))):
@@ -446,7 +472,7 @@ async def servertop(ctx):
         if(len(order2)==2):
             await client.say("{}, The top players on your server are: \n \n {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', users[firstp]['points'], '<@' + secondp + '>',  users[secondp]['points']))
         if(len(order2)==3):
-            await client.say("{}, The top players on your server are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points".format(user.mention, '<@' + firstp + '>', users[firstp]['points'], '<@' + secondp + '>',  users[secondp]['points'], '<@' + thirdp + '>', users[thirdp]['points']))
+            await client.say("{}, The top players on your server are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', users[firstp]['points'], '<@' + secondp + '>',  users[secondp]['points'], '<@' + thirdp + '>', users[thirdp]['points']))
         if(len(order2)==4):
             await client.say("{}, The top players on your server are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', users[firstp]['points'], '<@' + secondp + '>',  users[secondp]['points'], '<@' + thirdp + '>', users[thirdp]['points'], '<@' + fourthp + '>', users[fourthp]['points']))
         if(len(order2)>=5):
@@ -473,7 +499,7 @@ async def help(ctx):
     )
 
     embed.set_author(name='rngBot commands')
-    embed.add_field(name='.bal', value='Shows your current balance',inline=False)
+    embed.add_field(name='.bal', value="Shows your current balance, and creates one if you don't have one. (You must do this command before gambling)",inline=False)
     embed.add_field(name='.pay (amount) (person)', value='Pays an amount of points to a person',inline=False)
     embed.add_field(name='.lookup (person)', value="Looks up a different person's balance",inline=False)
     embed.add_field(name='.ping', value="Checks rngBot's latency",inline=False)
