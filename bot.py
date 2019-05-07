@@ -17,7 +17,8 @@ import math
 import sys
 import platform
 from discord import Permissions
-
+import steam
+import praw
 
 sys.setrecursionlimit(100000)
 TOKEN = 'NTUxNTE1MTU1MzAxNjYyNzIz.D1yGTQ.G1q57WPSIVjNVkdVdY3GJBeoNMA'
@@ -29,6 +30,12 @@ else:
 
 client = commands.Bot(command_prefix = '.')
 client.remove_command('help')
+
+reddit = praw.Reddit(client_id='QL33zNN3n21wOg',
+                     client_secret='B-X3UELs_JWNVlBAxotbe51svyE',
+                     password='Th30d0r3H3ns0n#$<reddit>',
+                     user_agent='discordbot',
+                     username='Teo_1221')
 
 currentDT = datetime.datetime.now()
 currentTime = str(currentDT.year)+str(currentDT.month)+str(currentDT.day)+str(currentDT.hour)
@@ -110,6 +117,14 @@ async def bal(ctx):
 
     with open('users.json', 'w') as f:
         json.dump(users, f)
+
+#meme
+@client.command(pass_context=True)
+async def meme(ctx):
+    user = ctx.message.author
+    post = reddit.subreddit('dankmemes').random()
+    await client.say('{}, {}'.format(user.mention, post.url))
+
 
 #debug
 @client.command(pass_context=True)
