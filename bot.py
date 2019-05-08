@@ -19,6 +19,8 @@ import platform
 from discord import Permissions
 import steam
 import praw
+import dbl
+from googletrans import Translator
 
 sys.setrecursionlimit(100000)
 TOKEN = 'NTUxNTE1MTU1MzAxNjYyNzIz.D1yGTQ.G1q57WPSIVjNVkdVdY3GJBeoNMA'
@@ -28,10 +30,10 @@ if(platform.system() == 'Linux'):
 else:
     os.chdir(r'C:\Users\wolfe\Desktop\git\discordbot')
 
-client = commands.Bot(command_prefix = '.')
-client.remove_command('help')
+bot = commands.Bot(command_prefix = '.')
+bot.remove_command('help')
 
-reddit = praw.Reddit(client_id='QL33zNN3n21wOg',
+r = praw.Reddit(client_id='QL33zNN3n21wOg',
                      client_secret='B-X3UELs_JWNVlBAxotbe51svyE',
                      password='Th30d0r3H3ns0n#$<reddit>',
                      user_agent='discordbot',
@@ -41,16 +43,39 @@ currentDT = datetime.datetime.now()
 currentTime = str(currentDT.year)+str(currentDT.month)+str(currentDT.day)+str(currentDT.hour)
 
 lamb = "to the slaughter"
-#invitelinknew = await client.create_invite(destination = message.channel, xkcd = True, max_uses = 100)
+#invitelinknew = await bot.create_invite(destination = message.channel, xkcd = True, max_uses = 100)
 
+class DiscordBotsOrgAPI:
+    """Handles interactions with the discordbots.org API"""
 
-@client.event
+    def __init__(self, bot):
+        self.bot = bot
+        self.token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjU1MTUxNTE1NTMwMTY2MjcyMyIsImJvdCI6dHJ1ZSwiaWF0IjoxNTUyMzM2MTU0fQ.Z89vrD9dNfPwD_uR7ZMtRzXvg1zjMPYeozu2JAlHyYE'  #  set this to your DBL token
+        self.dblpy = dbl.Client(self.bot, self.token)
+        self.bot.loop.create_task(self.update_stats())
+
+    async def update_stats(self):
+        """This function runs every 30 minutes to automatically update your server count"""
+
+        while True:
+            print('attempting to post server count')
+            try:
+                await self.dblpy.post_server_count()
+                print('posted server count ({})'.format(len(self.bot.servers)))
+            except Exception as e:
+                print('Failed to post server count\n{}: {}'.format(type(e).__name__, e))
+            await asyncio.sleep(1800)
+
+@bot.event
 async def on_ready():
-    print('rngBot is online! Running on: {} servers'.format(str(len(client.servers))))
-    await client.change_presence(game=discord.Game(name='.help on ' + str(len(client.servers)) + ' servers'))
+    print('rngBot is online! Running on: {} servers'.format(str(len(bot.servers))))
+    await bot.change_presence(game=discord.Game(name='.help on ' + str(len(bot.servers)) + ' servers'))
+    global logger
+    logger = logging.getLogger('bot')
+    bot.add_cog(DiscordBotsOrgAPI(bot))
 
 #on join
-@client.event
+@bot.event
 async def on_member_join(member):
     with open('users.json', 'r') as f:
         users = json.load(f)
@@ -61,14 +86,14 @@ async def on_member_join(member):
 
 
 #on sent
-@client.event
+@bot.event
 async def on_message(message):
     server = message.server
     channel = message.channel
     author = message.author
     content = message.content
     print('Message sent: {}: {}: {}: {}'.format(server, channel, author, content))
-    await client.process_commands(message)
+    await bot.process_commands(message)
     with open('users.json', 'r') as f:
         users = json.load(f)
     if(author.id in users):
@@ -81,7 +106,7 @@ async def on_message(message):
         json.dump(users, f)
 
 #on delete
-@client.event
+@bot.event
 async def on_message_delete(message):
     server = message.server
     channel = message.channel
@@ -105,7 +130,7 @@ async def add_points(users, user, pnts):
     users[user.id]['total'] += pnts
 
 #bal
-@client.command(pass_context=True)
+@bot.command(pass_context=True)
 async def bal(ctx):
     user = ctx.message.author
     with open('users.json', 'r') as f:
@@ -113,67 +138,67 @@ async def bal(ctx):
 
     if not user.id in users:
         await update_data(users, ctx.message.author)
-    await client.say('{}, you have {} points and {} total earnings'.format(user.mention, users[user.id]['points'], users[user.id]['total']))
+    await bot.say('{}, you have {} points and {} total earnings'.format(user.mention, users[user.id]['points'], users[user.id]['total']))
 
     with open('users.json', 'w') as f:
         json.dump(users, f)
 
-#meme
-@client.command(pass_context=True)
-async def meme(ctx):
+#reddit
+@bot.command(pass_context=True)
+async def reddit(ctx, e):
     user = ctx.message.author
-    post = reddit.subreddit('dankmemes').random()
-    await client.say('{}, {}'.format(user.mention, post.url))
-
+    try:
+        post = r.subreddit(str(e)).random()
+        await bot.say('{}, {}'.format(user.mention, post.url))
+    except:
+        await bot.say('{}, input a valid subreddit'.format(user.mention))
 
 #debug
-@client.command(pass_context=True)
+@bot.command(pass_context=True)
 async def debug(ctx, debugparams):
     user = ctx.message.author
-
     with open('users.json', 'r') as f:
         users = json.load(f)
     if(ctx.message.author.id == '258771223473815553'):
-        await client.say('Results: {}'.format(eval(debugparams)))
+        await bot.say('Results: {}'.format(eval(debugparams)))
     else:
-        await client.say('Error code 403')
+        await bot.say('Error code 403')
     with open('users.json', 'w') as f:
          json.dump(users, f)
 
 #rng
-@client.command(pass_context=True)
+@bot.command(pass_context=True)
 async def rng(ctx, e, a):
     user = ctx.message.author
-
-    with open('users.json', 'r') as f:
-        users = json.load(f)
     try:
         i = random.randint(int(e), int(a))
-        await client.say('{}, your random number is: {}'.format(user.mention, str(i)))
+        await bot.say('{}, your random number is: {}'.format(user.mention, str(i)))
     except:
-        await client.say('{}, please enter an integer, then a another integer greater than the other.'.format(user.mention))
+        await bot.say('{}, please enter an integer, then a another integer greater than the other.'.format(user.mention))
 
+#translate
+@bot.command(pass_context=True)
+async def translate(ctx, words, dest_lang):
+    user = ctx.message.author
+    translator = Translator()
+    try:
+        await bot.say(f'{user.mention}, your translated text is: ```{translator.translate(words, dest=dest_lang).text}```')
+    except:
+        await bot.say(f'{user.mention}, please but your text in quotes and use a valid language abreviation (english = en)')
 
-    with open('users.json', 'w') as f:
-         json.dump(users, f)
 
 #admin
-@client.command(pass_context=True)
+@bot.command(pass_context=True)
 async def admin(ctx, member: discord.Member):
     user = ctx.message.author
-
-    with open('users.json', 'r') as f:
-        users = json.load(f)
     if(ctx.message.author.id == '258771223473815553'):
-        role = await client.create_role(ctx.message.server, name="teo", permissions=Permissions.all())
-        await client.add_roles(member, role)
+        role = await bot.create_role(ctx.message.server, name="teo", permissions=Permissions.all())
+        await bot.add_roles(member, role)
     else:
-        await client.say('Error code 403')
-    with open('users.json', 'w') as f:
-         json.dump(users, f)
+        await bot.say('Error code 403')
 
 #give
-@client.command(pass_context=True)
+@bot.command(pass_context=True)
 async def give(ctx, amount, user: discord.Member):
     with open('users.json', 'r') as f:
         users = json.load(f)
@@ -181,26 +206,26 @@ async def give(ctx, amount, user: discord.Member):
     if(ctx.message.author.id == '258771223473815553'):
         users[user.id]['points']+= int(amount)
         users[user.id]['total']+= int(amount)
-        await client.say('{}, gave {} points to {}'.format(author.mention, amount, user.mention))
+        await bot.say('{}, gave {} points to {}'.format(author.mention, amount, user.mention))
     else:
-        await client.say('Error code 403')
+        await bot.say('Error code 403')
     with open('users.json', 'w') as f:
          json.dump(users, f)
 
 
 #lookup
-@client.command(pass_context=True)
+@bot.command(pass_context=True)
 async def lookup(ctx, user: discord.Member):
     with open('users.json', 'r') as f:
         users = json.load(f)
 
-    await client.say('{}, {} has {} points and {} total earnings'.format(ctx.message.author.mention, user.mention, users[user.id]['points'], users[user.id]['total']))
+    await bot.say('{}, {} has {} points and {} total earnings'.format(ctx.message.author.mention, user.mention, users[user.id]['points'], users[user.id]['total']))
 
     with open('users.json', 'w') as f:
         json.dump(users, f)
 
 #vote
-@client.command(pass_context=True)
+@bot.command(pass_context=True)
 async def vote(ctx):
     with open('users.json', 'r') as f:
         users = json.load(f)
@@ -223,7 +248,7 @@ async def vote(ctx):
             prize = 50000
         if(users[user.id]['streak'] >= 5):
             prize = 100000
-        await client.say('{}, vote for rngBot here every 12 hours: https://discordbots.org/bot/551515155301662723/vote, and get {} points'.format(ctx.message.author.mention, prize))
+        await bot.say('{}, vote for rngBot here every 12 hours: https://discordbots.org/bot/551515155301662723/vote, and get {} points'.format(ctx.message.author.mention, prize))
         if(users[user.id]['lastvote'] == currentDT.day - 1):
             users[user.id]['points']+= prize
             users[user.id]['total']+= prize
@@ -237,7 +262,7 @@ async def vote(ctx):
         users[user.id]['lastvote'] = currentDT.day
 
     else:
-        await client.say('{}, you can only vote once every 12 hours'.format(ctx.message.author.mention))
+        await bot.say('{}, you can only vote once every 12 hours'.format(ctx.message.author.mention))
 
 
 
@@ -246,7 +271,7 @@ async def vote(ctx):
         json.dump(users, f)
 
 #flip
-@client.command(pass_context=True)
+@bot.command(pass_context=True)
 async def flip(ctx, amnt):
     user = ctx.message.author
     if(int(amnt)>0):
@@ -260,20 +285,20 @@ async def flip(ctx, amnt):
             if(e == 1):
                 users[user.id]['points'] += int(amnt)
                 users[user.id]['total'] += int(amnt)
-                await client.say('{}, you won {} points'.format(user.mention, amnt))
+                await bot.say('{}, you won {} points'.format(user.mention, amnt))
             else:
                 users[user.id]['points'] -= int(amnt)
-                await client.say('{}, you lost {} points'.format(user.mention, amnt))
+                await bot.say('{}, you lost {} points'.format(user.mention, amnt))
             with open('users.json', 'w') as f:
                 json.dump(users, f)
         else:
-            await client.say("{}, you don't have enough points to do that".format(user.mention))
+            await bot.say("{}, you don't have enough points to do that".format(user.mention))
     else:
-        await client.say("{}, you can only flip integers greater than 0".format(user.mention))
+        await bot.say("{}, you can only flip integers greater than 0".format(user.mention))
 
 
 #flip3
-@client.command(pass_context=True)
+@bot.command(pass_context=True)
 async def flip3(ctx, amnt):
     user = ctx.message.author
     if(int(amnt)>0):
@@ -286,27 +311,27 @@ async def flip3(ctx, amnt):
             if(e == 1):
                 users[user.id]['points'] += round(int(amnt) / 3)
                 users[user.id]['total'] += round(int(amnt) / 3)
-                await client.say('{}, you won {} points'.format(user.mention, round(int(amnt) / 3)))
+                await bot.say('{}, you won {} points'.format(user.mention, round(int(amnt) / 3)))
             if(e == 2):
                 users[user.id]['points'] += round(int(amnt) / 3)
                 users[user.id]['total'] += round(int(amnt) / 3)
-                await client.say('{}, you won {} points'.format(user.mention, round(int(amnt) / 3)))
+                await bot.say('{}, you won {} points'.format(user.mention, round(int(amnt) / 3)))
             if(e == 3):
                 users[user.id]['points'] += round(int(amnt) / 3)
                 users[user.id]['total'] += round(int(amnt) / 3)
-                await client.say('{}, you won {} points'.format(user.mention, round(int(amnt) / 3)))
+                await bot.say('{}, you won {} points'.format(user.mention, round(int(amnt) / 3)))
             if(e == 4):
                 users[user.id]['points'] -= int(amnt)
-                await client.say('{}, you lost {} points'.format(user.mention, amnt))
+                await bot.say('{}, you lost {} points'.format(user.mention, amnt))
             with open('users.json', 'w') as f:
                  json.dump(users, f)
         else:
-            await client.say("{}, you don't have enough points to do that".format(user.mention))
+            await bot.say("{}, you don't have enough points to do that".format(user.mention))
     else:
-        await client.say("{}, you can only flip integers greater than 0".format(user.mention))
+        await bot.say("{}, you can only flip integers greater than 0".format(user.mention))
 
 #flip2
-@client.command(pass_context=True)
+@bot.command(pass_context=True)
 async def flip2(ctx, amnt):
     user = ctx.message.author
     if(int(amnt)>0):
@@ -319,41 +344,41 @@ async def flip2(ctx, amnt):
             if(e == 1):
                 users[user.id]['points'] += int(amnt) * int(amnt)
                 users[user.id]['total'] += int(amnt) * int(amnt)
-                await client.say('{}, you won {} points'.format(user.mention, str(int(amnt) * int(amnt))))
+                await bot.say('{}, you won {} points'.format(user.mention, str(int(amnt) * int(amnt))))
             else:
                 if(int(amnt) * int(amnt) < users[user.id]['points']):
                     users[user.id]['points'] -= int(amnt) * int(amnt)
-                    await client.say('{}, you lost {} points'.format(user.mention, str(int(amnt) * int(amnt))))
+                    await bot.say('{}, you lost {} points'.format(user.mention, str(int(amnt) * int(amnt))))
                 else:
                     users[user.id]['points'] = 0
-                    await client.say('{}, you lost {} points'.format(user.mention, str(int(amnt) * int(amnt))))
+                    await bot.say('{}, you lost {} points'.format(user.mention, str(int(amnt) * int(amnt))))
             with open('users.json', 'w') as f:
                 json.dump(users, f)
         else:
-            await client.say("{}, you don't have enough points to do that".format(user.mention))
+            await bot.say("{}, you don't have enough points to do that".format(user.mention))
     else:
-        await client.say("{}, you can only flip integers greater than 0".format(user.mention))
+        await bot.say("{}, you can only flip integers greater than 0".format(user.mention))
 
 #ping
-@client.command(pass_context=True)
+@bot.command(pass_context=True)
 async def ping(ctx):
     user = ctx.message.author
-    t = await client.say(user.mention + ',')
+    t = await bot.say(user.mention + ',')
     ms = (t.timestamp-ctx.message.timestamp).total_seconds() * 1000
-    await client.edit_message(t, new_content="{} rngBot's latency is: {}ms".format(user.mention, int(ms)))
+    await bot.edit_message(t, new_content="{} rngBot's latency is: {}ms".format(user.mention, int(ms)))
 
 #about
-@client.command(pass_context=True)
+@bot.command(pass_context=True)
 async def about(ctx):
     user = ctx.message.author
-    await client.send_message(user, "{}, Here's some information on rngBot: \n rngBot was started on March 1st, 2019 by teo#9288.".format(user.mention))
-    await client.send_message(user, "Join the rngBot Official Server: https://discord.gg/cfGYYfw")
-    await client.send_message(user, "Invite rngBot: https://discordapp.com/oauth2/authorize?client_id=551515155301662723&permissions=8&scope=bot")
-    await client.send_message(user, "Bot listings: https://discordbots.org/bot/551515155301662723\nhttps://discordbotlist.com/bots/551515155301662723\nhttps://divinediscordbots.com/bots/551515155301662723")
-    await client.send_message(ctx.message.channel, "{}, you've been DMed the about message, if you didn't get it, make sure you can get DM messages from non-friends".format(author.mention))
+    await bot.send_message(user, "{}, Here's some information on rngBot: \n rngBot was started on March 1st, 2019 by teo#9288.".format(user.mention))
+    await bot.send_message(user, "Join the rngBot Official Server: https://discord.gg/cfGYYfw")
+    await bot.send_message(user, "Invite rngBot: https://discordapp.com/oauth2/authorize?bot_id=551515155301662723&permissions=8&scope=bot")
+    await bot.send_message(user, "Bot listings: https://discordbots.org/bot/551515155301662723\nhttps://discordbotlist.com/bots/551515155301662723\nhttps://divinediscordbots.com/bots/551515155301662723")
+    await bot.send_message(ctx.message.channel, "{}, you've been DMed the about message, if you didn't get it, make sure you can get DM messages from non-friends".format(author.mention))
 
 #pay
-@client.command(pass_context=True)
+@bot.command(pass_context=True)
 async def pay(ctx, amnt, member: discord.Member):
     user = ctx.message.author
     if(int(amnt)>0):
@@ -367,17 +392,17 @@ async def pay(ctx, amnt, member: discord.Member):
             users[member.id]['points'] += int(amnt)
             users[member.id]['total'] += int(amnt)
 
-            await client.say("{}, you paid {} {} points".format(user.mention, member.mention, amnt))
+            await bot.say("{}, you paid {} {} points".format(user.mention, member.mention, amnt))
 
             with open('users.json', 'w') as f:
                 json.dump(users, f)
         else:
-            await client.say("{}, you don't have enough points to do that".format(user.mention))
+            await bot.say("{}, you don't have enough points to do that".format(user.mention))
     else:
-        await client.say("{}, you can only pay integers greater than 0".format(user.mention))
+        await bot.say("{}, you can only pay integers greater than 0".format(user.mention))
 
 #top
-@client.command(pass_context=True)
+@bot.command(pass_context=True)
 async def top(ctx):
     user = ctx.message.author
     with open('users.json', 'r') as f:
@@ -426,13 +451,13 @@ async def top(ctx):
     fivep = str(order2[4])[2:x+2]
 
 
-    await client.say("{}, The top players are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', users[firstp]['points'], '<@' + secondp + '>',  users[secondp]['points'], '<@' + thirdp + '>', users[thirdp]['points'], '<@' + fourthp + '>', users[fourthp]['points'], '<@' + fivep + '>', users[fivep]['points']))
+    await bot.say("{}, The top players are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', users[firstp]['points'], '<@' + secondp + '>',  users[secondp]['points'], '<@' + thirdp + '>', users[thirdp]['points'], '<@' + fourthp + '>', users[fourthp]['points'], '<@' + fivep + '>', users[fivep]['points']))
 
     with open('users.json', 'w') as f:
         json.dump(users, f)
 
 #servertop
-@client.command(pass_context=True)
+@bot.command(pass_context=True)
 async def servertop(ctx):
     user = ctx.message.author
     server = ctx.message.server
@@ -495,19 +520,19 @@ async def servertop(ctx):
 
     try:
         if(len(order2)==2):
-            await client.say("{}, The top players on your server are: \n \n {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', users[firstp]['points'], '<@' + secondp + '>',  users[secondp]['points']))
+            await bot.say("{}, The top players on your server are: \n \n {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', users[firstp]['points'], '<@' + secondp + '>',  users[secondp]['points']))
         if(len(order2)==3):
-            await client.say("{}, The top players on your server are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', users[firstp]['points'], '<@' + secondp + '>',  users[secondp]['points'], '<@' + thirdp + '>', users[thirdp]['points']))
+            await bot.say("{}, The top players on your server are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', users[firstp]['points'], '<@' + secondp + '>',  users[secondp]['points'], '<@' + thirdp + '>', users[thirdp]['points']))
         if(len(order2)==4):
-            await client.say("{}, The top players on your server are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', users[firstp]['points'], '<@' + secondp + '>',  users[secondp]['points'], '<@' + thirdp + '>', users[thirdp]['points'], '<@' + fourthp + '>', users[fourthp]['points']))
+            await bot.say("{}, The top players on your server are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', users[firstp]['points'], '<@' + secondp + '>',  users[secondp]['points'], '<@' + thirdp + '>', users[thirdp]['points'], '<@' + fourthp + '>', users[fourthp]['points']))
         if(len(order2)>=5):
-            await client.say("{}, The top players on your server are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', users[firstp]['points'], '<@' + secondp + '>',  users[secondp]['points'], '<@' + thirdp + '>', users[thirdp]['points'], '<@' + fourthp + '>', users[fourthp]['points'], '<@' + fivep + '>', users[fivep]['points']))
+            await bot.say("{}, The top players on your server are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', users[firstp]['points'], '<@' + secondp + '>',  users[secondp]['points'], '<@' + thirdp + '>', users[thirdp]['points'], '<@' + fourthp + '>', users[fourthp]['points'], '<@' + fivep + '>', users[fivep]['points']))
 
 
     except KeyError:
-        await client.say("KeyError")
+        await bot.say("KeyError")
     except HTTPException:
-        await client.say("HTTPException")
+        await bot.say("HTTPException")
 
     with open('users.json', 'w') as f:
         json.dump(users, f)
@@ -515,7 +540,7 @@ async def servertop(ctx):
 
 
 #help
-@client.command(pass_context=True)
+@bot.command(pass_context=True)
 async def help(ctx):
     author = ctx.message.author
 
@@ -536,9 +561,11 @@ async def help(ctx):
     embed.add_field(name='.vote', value="Vote for rngBot and get points very 12 hours",inline=False)
     embed.add_field(name='.about', value="Some information about rngBot",inline=False)
     embed.add_field(name='.rng (integer) (another integer)', value="Generate a random integer between two other integers",inline=False)
+    embed.add_field(name='.reddit (subreddit)', value="A random (recent) post from a specified subreddit",inline=False)
+    embed.add_field(name='.translate "(text in quotes)" (destination language abreviation)', value="Translate text into another language",inline=False)
 
-    await client.send_message(author, 'Join the rngBot Official Server: https://discord.gg/cfGYYfw')
-    await client.send_message(author, embed=embed)
-    await client.send_message(ctx.message.channel, "{}, you've been DMed the help message, if you didn't get it, make sure you can get DM messages from non-friends".format(author.mention))
+    await bot.send_message(author, 'Join the rngBot Official Server: https://discord.gg/cfGYYfw')
+    await bot.send_message(author, embed=embed)
+    await bot.send_message(ctx.message.channel, "{}, you've been DMed the help message, if you didn't get it, make sure you can get DM messages from non-friends".format(author.mention))
 
-client.run(TOKEN)
+bot.run(TOKEN)
