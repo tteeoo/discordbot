@@ -30,7 +30,18 @@ if(platform.system() == 'Linux'):
 else:
     os.chdir(r'C:\Users\wolfe\Desktop\git\discordbot')
 
-bot = commands.Bot(command_prefix = '.')
+def get_prefix(bot, msg):
+    with open('servers.json', 'r') as f:
+        servers = json.load(f)
+    if(msg.server.id not in servers):
+        servers[msg.server.id] = {}
+        servers[msg.server.id]['prefix'] = '.'
+    return servers[msg.server.id]['prefix']
+    with open('servers.json', 'w') as f:
+        json.dump(servers, f)
+
+bot = commands.Bot(command_prefix = get_prefix)
+
 bot.remove_command('help')
 
 r = praw.Reddit(client_id='QL33zNN3n21wOg',
@@ -84,7 +95,6 @@ async def on_member_join(member):
     with open('users.json', 'w') as f:
         json.dump(users, f)
 
-
 #on sent
 @bot.event
 async def on_message(message):
@@ -92,6 +102,12 @@ async def on_message(message):
     channel = message.channel
     author = message.author
     content = message.content
+    with open('servers.json', 'r') as f:
+        servers = json.load(f)
+    global bot
+    if(server.id not in servers):
+        servers[server.id] = {}
+        servers[server.id]['prefix'] = '.'
     print('Message sent: {}: {}: {}: {}'.format(server, channel, author, content))
     await bot.process_commands(message)
     with open('users.json', 'r') as f:
@@ -104,6 +120,8 @@ async def on_message(message):
         await add_points(users, message.author, e)
     with open('users.json', 'w') as f:
         json.dump(users, f)
+    with open('servers.json', 'w') as f:
+        json.dump(servers, f)
 
 #on delete
 @bot.event
@@ -143,15 +161,63 @@ async def bal(ctx):
     with open('users.json', 'w') as f:
         json.dump(users, f)
 
+async def is_nsfw(channel: discord.Channel):
+    try:
+        _gid = channel.server.id
+    except AttributeError:
+        return False
+    data = await bot.http.request(
+        discord.http.Route(
+            'GET', '/guilds/{guild_id}/channels', guild_id=_gid))
+    channeldata = [d for d in data if d['id'] == channel.id][0]
+    return channeldata['nsfw']
+
 #reddit
 @bot.command(pass_context=True)
 async def reddit(ctx, e):
     user = ctx.message.author
-    try:
-        post = r.subreddit(str(e)).random()
+    #try:
+    channel_nsfw = await is_nsfw(ctx.message.channel)
+    post = r.subreddit(str(e)).random()
+    if post.over_18 == False:
         await bot.say('{}, {}'.format(user.mention, post.url))
-    except:
-        await bot.say('{}, input a valid subreddit'.format(user.mention))
+    else:
+        if channel_nsfw:
+            await bot.say('{}, {}'.format(user.mention, post.url))
+        else:
+            await bot.say('{}, this message can only be sent in an nsfw channel'.format(user.mention))
+
+    #except:
+        #await bot.say('{}, input a valid subreddit'.format(user.mention))
+
+#setprefix
+@bot.command(pass_context=True)
+async def setprefix(ctx, prf):
+    user = ctx.message.author
+    server = ctx.message.server
+    with open('servers.json', 'r') as f:
+        servers = json.load(f)
+    if("staff" in [y.name.lower() for y in user.roles]):
+        servers[server.id]['prefix'] = '!'
+        await bot.say('{}, set the server ({}) prefix to {}'.format(user.mention, str(server.id), prf))
+    else:
+        await bot.say('{}, Error 403'.format(user.mention))
+    with open('servers.json', 'w') as f:
+        json.dump(servers, f)
+
+#clear
+@bot.command(pass_context = True)
+async def clear(ctx, amount=1):
+    user = ctx.message.author
+    if("staff" in [y.name.lower() for y in user.roles]):
+        channel = ctx.message.channel
+        messages = []
+        async for message in bot.logs_from(channel, limit=int(amount)):
+            messages.append(message)
+        await bot.delete_messages(messages)
+        await bot.say('Messages deleted succesfully!')
+    else:
+        await bot.say('{}, Error 403'.format(user.mention))
 
 #debug
 @bot.command(pass_context=True)
@@ -159,12 +225,16 @@ async def debug(ctx, debugparams):
     user = ctx.message.author
     with open('users.json', 'r') as f:
         users = json.load(f)
+    with open('servers.json', 'r') as f:
+        servers = json.load(f)
     if(ctx.message.author.id == '258771223473815553'):
         await bot.say('Results: {}'.format(eval(debugparams)))
     else:
         await bot.say('Error code 403')
     with open('users.json', 'w') as f:
-         json.dump(users, f)
+        json.dump(users, f)
+    with open('servers.json', 'w') as f:
+        json.dump(servers, f)
 
 #rng
 @bot.command(pass_context=True)
@@ -248,7 +318,7 @@ async def vote(ctx):
             prize = 50000
         if(users[user.id]['streak'] >= 5):
             prize = 100000
-        await bot.say('{}, vote for rngBot here every 12 hours: https://discordbots.org/bot/551515155301662723/vote, and get {} points'.format(ctx.message.author.mention, prize))
+        await bot.say('{}, vote for rngBot here every 12 hours: https://discordbots.org/bot/551515155301662723/vote, and get {} points, you have a voting streak of {}'.format(ctx.message.author.mention, prize, users[user.id]['streak']))
         if(users[user.id]['lastvote'] == currentDT.day - 1):
             users[user.id]['points']+= prize
             users[user.id]['total']+= prize
@@ -562,7 +632,9 @@ async def help(ctx):
     embed.add_field(name='.about', value="Some information about rngBot",inline=False)
     embed.add_field(name='.rng (integer) (another integer)', value="Generate a random integer between two other integers",inline=False)
     embed.add_field(name='.reddit (subreddit)', value="A random (recent) post from a specified subreddit",inline=False)
+    embed.add_field(name='.setprefix (prefix)', value="Set the rngBot's server prefix, this command can only be executed if the user has the role: staff",inline=False)
     embed.add_field(name='.translate "(text in quotes)" (destination language abreviation)', value="Translate text into another language",inline=False)
+    embed.add_field(name='.clear (# of messages)', value="Clear a number of messages, this command can only be executed if the user has the role: staff",inline=False)
 
     await bot.send_message(author, 'Join the rngBot Official Server: https://discord.gg/cfGYYfw')
     await bot.send_message(author, embed=embed)
