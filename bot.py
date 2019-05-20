@@ -21,6 +21,7 @@ import steam
 import praw
 import dbl
 from googletrans import Translator
+from decimal import Decimal
 
 sys.setrecursionlimit(100000)
 TOKEN = 'NTUxNTE1MTU1MzAxNjYyNzIz.D1yGTQ.G1q57WPSIVjNVkdVdY3GJBeoNMA'
@@ -156,7 +157,13 @@ async def bal(ctx):
 
     if not user.id in users:
         await update_data(users, ctx.message.author)
-    await bot.say('{}, you have {} points and {} total earnings'.format(user.mention, users[user.id]['points'], users[user.id]['total']))
+    point = users[user.id]['points']
+    if int(point) > 999999999999999999999999999999:
+        point = "{:.2e}".format(Decimal(point))
+    total = users[user.id]['total']
+    if int(total) > 999999999999999999999999999999:
+        total = "{:.2e}".format(Decimal(total))
+    await bot.say('{}, you have {} points and {} total earnings'.format(user.mention, point, total))
 
     with open('users.json', 'w') as f:
         json.dump(users, f)
@@ -198,7 +205,7 @@ async def setprefix(ctx, prf):
     with open('servers.json', 'r') as f:
         servers = json.load(f)
     if("staff" in [y.name.lower() for y in user.roles]):
-        servers[server.id]['prefix'] = '!'
+        servers[server.id]['prefix'] = prf
         await bot.say('{}, set the server ({}) prefix to {}'.format(user.mention, str(server.id), prf))
     else:
         await bot.say('{}, Error 403'.format(user.mention))
@@ -223,6 +230,7 @@ async def clear(ctx, amount=1):
 @bot.command(pass_context=True)
 async def debug(ctx, debugparams):
     user = ctx.message.author
+    server = ctx.message.server
     with open('users.json', 'r') as f:
         users = json.load(f)
     with open('servers.json', 'r') as f:
@@ -289,7 +297,13 @@ async def lookup(ctx, user: discord.Member):
     with open('users.json', 'r') as f:
         users = json.load(f)
 
-    await bot.say('{}, {} has {} points and {} total earnings'.format(ctx.message.author.mention, user.mention, users[user.id]['points'], users[user.id]['total']))
+    point = users[user.id]['points']
+    if int(point) > 999999999999999999999999999999:
+        point = "{:.2e}".format(Decimal(point))
+    total = users[user.id]['total']
+    if int(total) > 999999999999999999999999999999:
+        total = "{:.2e}".format(Decimal(total))
+    await bot.say('{}, {} has {} points and {} total earnings'.format(ctx.message.author.mention, user.mention, point, total))
 
     with open('users.json', 'w') as f:
         json.dump(users, f)
@@ -333,9 +347,6 @@ async def vote(ctx):
 
     else:
         await bot.say('{}, you can only vote once every 12 hours'.format(ctx.message.author.mention))
-
-
-
 
     with open('users.json', 'w') as f:
         json.dump(users, f)
@@ -410,18 +421,22 @@ async def flip2(ctx, amnt):
         if not user.id in users:
             await update_data(users, ctx.message.author)
         e = random.randint(1,10)
+        if(int(amnt) * int(amnt) > 999999999999999999999999999999):
+            winnings = str("{:.2e}".format(Decimal(int(amnt) * int(amnt))))
+        else:
+            winnings = str(int(amnt) * int(amnt))
         if(int(amnt)<=users[user.id]['points']):
             if(e == 1):
                 users[user.id]['points'] += int(amnt) * int(amnt)
                 users[user.id]['total'] += int(amnt) * int(amnt)
-                await bot.say('{}, you won {} points'.format(user.mention, str(int(amnt) * int(amnt))))
+                await bot.say('{}, you won {} points'.format(user.mention, winnings))
             else:
                 if(int(amnt) * int(amnt) < users[user.id]['points']):
                     users[user.id]['points'] -= int(amnt) * int(amnt)
-                    await bot.say('{}, you lost {} points'.format(user.mention, str(int(amnt) * int(amnt))))
+                    await bot.say('{}, you lost {} points'.format(user.mention, winnings))
                 else:
                     users[user.id]['points'] = 0
-                    await bot.say('{}, you lost {} points'.format(user.mention, str(int(amnt) * int(amnt))))
+                    await bot.say('{}, you lost {} points'.format(user.mention, winnings))
             with open('users.json', 'w') as f:
                 json.dump(users, f)
         else:
@@ -487,6 +502,9 @@ async def top(ctx):
             break
         x+=1
     firstp = str(order2[0])[2:x+2]
+    firsts = users[firstp]['points']
+    if int(firsts) > 999999999999999999999999999999:
+        firsts = "{:.2e}".format(Decimal(firsts))
 
     secondp = str(order2[1])[2:]
     x = 0
@@ -495,6 +513,9 @@ async def top(ctx):
             break
         x+=1
     secondp = str(order2[1])[2:x+2]
+    seconds = users[secondp]['points']
+    if int(seconds) > 999999999999999999999999999999:
+        seconds = "{:.2e}".format(Decimal(seconds))
 
     thirdp = str(order2[2])[2:]
     x = 0
@@ -503,6 +524,9 @@ async def top(ctx):
             break
         x+=1
     thirdp = str(order2[2])[2:x+2]
+    thirds = users[thirdp]['points']
+    if int(thirds) > 999999999999999999999999999999:
+        thirds = "{:.2e}".format(Decimal(thirds))
 
     fourthp = str(order2[3])[2:]
     x = 0
@@ -511,6 +535,9 @@ async def top(ctx):
             break
         x+=1
     fourthp = str(order2[3])[2:x+2]
+    fourths = users[fourthp]['points']
+    if int(fourths) > 999999999999999999999999999999:
+        fourths = "{:.2e}".format(Decimal(fourths))
 
     fivep = str(order2[4])[2:]
     x = 0
@@ -519,9 +546,11 @@ async def top(ctx):
             break
         x+=1
     fivep = str(order2[4])[2:x+2]
+    fives = users[fivep]['points']
+    if int(fives) > 999999999999999999999999999999:
+        fives = "{:.2e}".format(Decimal(fives))
 
-
-    await bot.say("{}, The top players are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', users[firstp]['points'], '<@' + secondp + '>',  users[secondp]['points'], '<@' + thirdp + '>', users[thirdp]['points'], '<@' + fourthp + '>', users[fourthp]['points'], '<@' + fivep + '>', users[fivep]['points']))
+    await bot.say("{}, The top players are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', firsts, '<@' + secondp + '>',  seconds, '<@' + thirdp + '>', thirds, '<@' + fourthp + '>', fourths, '<@' + fivep + '>', fives))
 
     with open('users.json', 'w') as f:
         json.dump(users, f)
@@ -553,6 +582,9 @@ async def servertop(ctx):
             break
         x+=1
     firstp = str(order2[0])[2:x+2]
+    firsts = users[firstp]['points']
+    if int(firsts) > 999999999999999999999999999999:
+        firsts = "{:.2e}".format(Decimal(firsts))
 
     secondp = str(order2[1])[2:]
     x = 0
@@ -561,6 +593,10 @@ async def servertop(ctx):
             break
         x+=1
     secondp = str(order2[1])[2:x+2]
+    seconds = users[secondp]['points']
+    if int(seconds) > 999999999999999999999999999999:
+        seconds = "{:.2e}".format(Decimal(seconds))
+
     if(len(order2)>=3):
         thirdp = str(order2[2])[2:]
         x = 0
@@ -569,6 +605,9 @@ async def servertop(ctx):
                 break
             x+=1
         thirdp = str(order2[2])[2:x+2]
+        thirds = users[thirdp]['points']
+        if int(thirds) > 999999999999999999999999999999:
+            thirds = "{:.2e}".format(Decimal(thirds))
 
     if(len(order2)>=4):
         fourthp = str(order2[3])[2:]
@@ -578,6 +617,9 @@ async def servertop(ctx):
                 break
             x+=1
         fourthp = str(order2[3])[2:x+2]
+        fourths = users[fourthp]['points']
+        if int(fourths) > 999999999999999999999999999999:
+            fourths = "{:.2e}".format(Decimal(fourths))
 
     if(len(order2)>=5):
         fivep = str(order2[4])[2:]
@@ -587,16 +629,18 @@ async def servertop(ctx):
                 break
             x+=1
         fivep = str(order2[4])[2:x+2]
-
+        fives = users[fivep]['points']
+        if int(fives) > 999999999999999999999999999999:
+            fives = "{:.2e}".format(Decimal(fives))
     try:
         if(len(order2)==2):
-            await bot.say("{}, The top players on your server are: \n \n {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', users[firstp]['points'], '<@' + secondp + '>',  users[secondp]['points']))
+            await bot.say("{}, The top players on your server are: \n \n {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', firsts, '<@' + secondp + '>',  seconds))
         if(len(order2)==3):
-            await bot.say("{}, The top players on your server are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', users[firstp]['points'], '<@' + secondp + '>',  users[secondp]['points'], '<@' + thirdp + '>', users[thirdp]['points']))
+            await bot.say("{}, The top players on your server are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', firsts, '<@' + secondp + '>',  seconds, '<@' + thirdp + '>', thirds))
         if(len(order2)==4):
-            await bot.say("{}, The top players on your server are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', users[firstp]['points'], '<@' + secondp + '>',  users[secondp]['points'], '<@' + thirdp + '>', users[thirdp]['points'], '<@' + fourthp + '>', users[fourthp]['points']))
+            await bot.say("{}, The top players on your server are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', firsts, '<@' + secondp + '>',  seconds, '<@' + thirdp + '>', thirds, '<@' + fourthp + '>', fourths))
         if(len(order2)>=5):
-            await bot.say("{}, The top players on your server are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', users[firstp]['points'], '<@' + secondp + '>',  users[secondp]['points'], '<@' + thirdp + '>', users[thirdp]['points'], '<@' + fourthp + '>', users[fourthp]['points'], '<@' + fivep + '>', users[fivep]['points']))
+            await bot.say("{}, The top players on your server are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', firsts, '<@' + secondp + '>',  seconds, '<@' + thirdp + '>', thirds, '<@' + fourthp + '>', fourths, '<@' + fivep + '>', fives))
 
 
     except KeyError:
