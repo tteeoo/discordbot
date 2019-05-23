@@ -17,7 +17,6 @@ import math
 import sys
 import platform
 from discord import Permissions
-import steam
 import praw
 import dbl
 from googletrans import Translator
@@ -260,9 +259,11 @@ async def translate(ctx, words, dest_lang):
     user = ctx.message.author
     translator = Translator()
     try:
-        await bot.say(f'{user.mention}, your translated text is: ```{translator.translate(words, dest=dest_lang).text}```')
+		# await bot.say(f'{user.mention}, your translated text is: ```{translator.translate(words, dest=dest_lang).text}```')
+        ...
     except:
-        await bot.say(f'{user.mention}, please but your text in quotes and use a valid language abreviation (english = en)')
+       # await bot.say(f'{user.mention}, please but your text in quotes and use a valid language abreviation (english = en)')
+        ...
 
 
 #admin
