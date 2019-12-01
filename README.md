@@ -2,8 +2,21 @@
 
 **Some of the bot's code is very messy, as I wrote some of the functions a long time ago, but they work.**
 
+## Isosceles is a server economy bot that gives points to users when they chat in servers, along with many other commands.
+
+Users gain points, and then can gamble with points, as well as pay other users, and see leadboards
+
+The bot is currently in development and many more features are soon to come
+
+Features in the works:
+
+  - Server moderation
+  - Reddit integration
+  - And more! Suggestions are welcome on the discord server
+
 **For more info:**
 
+  - Discord Bot List: https://top.gg/bot/650477168702259220
   - Discord server: https://discordapp.com/invite/TJjQmUp
 
 # <a href="https://discordapp.com/api/oauth2/authorize?client_id=650477168702259220&permissions=8&scope=bot">Invite the bot</a> 
@@ -50,6 +63,6 @@
 
   - Generates a random number between two numbers
   
- **.about**
+ **.help**
 
-  - Shows some info about isosceles
+  - Self explanatory
