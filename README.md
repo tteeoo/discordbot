@@ -6,7 +6,7 @@
 
   - Discord server: https://discordapp.com/invite/TJjQmUp
 
-***Invite the bot: https://discordapp.com/api/oauth2/authorize?client_id=650477168702259220&permissions=8&scope=bot***
+# <a href="https://discordapp.com/api/oauth2/authorize?client_id=650477168702259220&permissions=8&scope=bot">Invite the bot</a> 
 
 # Commands
 
