@@ -7,3 +7,49 @@
   - Discord server: https://discordapp.com/invite/TJjQmUp
 
 ***Invite the bot: https://discordapp.com/api/oauth2/authorize?client_id=650477168702259220&permissions=8&scope=bot***
+
+# Commands
+
+**.bal**
+
+  - Shows your current balance
+  
+**.ping**
+
+  - Checks isosceles' latency
+ 
+**.top**
+
+  - Displays the top 5 players
+  
+**.servertop**
+
+  - Displays the top 5 players on the current server
+  
+**.lookup (person)**
+
+  - Looks up a person's balance
+  
+**.pay (amount) (person)**
+
+  - Pays a person an amount of points
+  
+**.flip (amount)**
+
+  - 50% chance to win an amount of points, 50% chance to lose the amount of points
+  
+**.flip2 (amount)**
+
+  - 10% chance to win an amount of points squared, 90% chance to lose the amount squared
+  
+**.flip3 (amount)**
+
+  - 75% chance to win one third an amount of points, 25% chance to lose the amount
+  
+ **.rng (integer) (greater integer)**
+
+  - Generates a random number between two numbers
+  
+ **.about**
+
+  - Shows some info about isosceles
