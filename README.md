@@ -5,6 +5,7 @@
 ## Isosceles is a server economy bot that gives points to users when they chat in servers, along with many other commands.
 
 Users gain points, and then can gamble with points, as well as pay other users, and see leadboards
+Points of course, are independent of the server and will transfer from server to server
 
 The bot is currently in development and many more features are soon to come
 
