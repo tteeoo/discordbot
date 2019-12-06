@@ -44,7 +44,7 @@ async def on_message(message):
                 if(users[juid]['points'] == 0):
                     pnts = 20
                 else:
-                    pnts = round(2 / users[juid]['points'] * 20 + 1)
+                    pnts = round(9 / users[juid]['points'] * 20 + 1)
                 await add_points(users, juid, pnts)
         else:
             if juid not in users:
@@ -208,14 +208,24 @@ async def flip(ctx, amnt):
         if(int(amnt) > 0):
 
             e = random.randint(1, 2)
-
+            j = random.randint(1, 128)
             if(int(amnt) <= users[juid]['points']):
-                if(e == 1):
-                    await add_points(users, juid, amnt)
-                    await ctx.send(f'{ctx.message.author.mention}, you won {str(amnt)} points')
+                if(j == 1):
+                    if(int(amnt) * int(amnt) > 999999999999999999999999999999):
+                        winnings = str("{:.2e}".format(Decimal(int(amnt) * int(amnt))))
+                    else:
+                        winnings = str(int(amnt) * int(amnt))
+
+                    users[juid]['points'] += int(amnt) * int(amnt)
+                    users[juid]['total'] += int(amnt) * int(amnt)
+                    await ctx.send(f'{ctx.message.author.mention}, you hit the jackpot and won {winnings} points!')
                 else:
-                    users[juid]['points'] -= int(amnt)
-                    await ctx.send(f'{ctx.message.author.mention}, you lost {str(amnt)} points')
+                    if(e == 1):
+                        await add_points(users, juid, amnt)
+                        await ctx.send(f'{ctx.message.author.mention}, you won {str(amnt)} points')
+                    else:
+                        users[juid]['points'] -= int(amnt)
+                        await ctx.send(f'{ctx.message.author.mention}, you lost {str(amnt)} points')
             else:
                 await ctx.send(f"{ctx.message.author.mention}, you don't have enough points to do that")
         else:
@@ -241,22 +251,34 @@ async def flip2(ctx, amnt):
         if(int(amnt) > 0):
             amnt = int(amnt)
             e = random.randint(1, 10)
-            if(int(amnt) * int(amnt) > 999999999999999999999999999999):
-                winnings = str("{:.2e}".format(Decimal(int(amnt) * int(amnt))))
-            else:
-                winnings = str(int(amnt) * int(amnt))
+            j = random.randint(1, 128)
             if(int(amnt) <= users[juid]['points']):
-                if(e == 1):
-                    users[juid]['points'] += int(amnt) * int(amnt)
-                    users[juid]['total'] += int(amnt) * int(amnt)
-                    await ctx.send(f'{ctx.message.author.mention}, you won {winnings} points')
-                else:
-                    if(int(amnt) * int(amnt) < users[juid]['points']):
-                        users[juid]['points'] -= int(amnt) * int(amnt)
-                        await ctx.send(f'{ctx.message.author.mention}, you lost {winnings} points')
+                if(j == 1):
+                    if(int(amnt) * int(amnt) * int(amnt) > 999999999999999999999999999999):
+                        winnings = str("{:.2e}".format(Decimal(int(amnt) * int(amnt) * int(amnt))))
                     else:
-                        users[juid]['points'] = 0
-                        await ctx.send(f'{ctx.message.author.mention}, you lost {winnings} points')
+                        winnings = str(int(amnt) * int(amnt) * int(amnt))
+
+                    users[juid]['points'] += int(amnt) * int(amnt) * int(amnt)
+                    users[juid]['total'] += int(amnt) * int(amnt) * int(amnt)
+                    await ctx.send(f'{ctx.message.author.mention}, you hit the jackpot and won {winnings} points!')
+                else:
+                    if(int(amnt) * int(amnt) > 999999999999999999999999999999):
+                        winnings = str("{:.2e}".format(Decimal(int(amnt) * int(amnt))))
+                    else:
+                        winnings = str(int(amnt) * int(amnt))
+
+                    if(e == 1):
+                        users[juid]['points'] += int(amnt) * int(amnt)
+                        users[juid]['total'] += int(amnt) * int(amnt)
+                        await ctx.send(f'{ctx.message.author.mention}, you won {winnings} points')
+                    else:
+                        if(int(amnt) * int(amnt) < users[juid]['points']):
+                            users[juid]['points'] -= int(amnt) * int(amnt)
+                            await ctx.send(f'{ctx.message.author.mention}, you lost {winnings} points')
+                        else:
+                            users[juid]['points'] = 0
+                            await ctx.send(f'{ctx.message.author.mention}, you lost {winnings} points')
             else:
                 await ctx.send(f"{ctx.message.author.mention}, you don't have enough points to do that")
         else:
@@ -282,23 +304,29 @@ async def flip3(ctx, amnt):
         amnt = int(amnt)
         if(int(amnt) > 0):
             e = random.randint(1, 4)
+            j = random.randint(1, 128)
 
             if(int(amnt) <= users[juid]['points']):
-                if(e == 1):
-                    users[juid]['points'] += round(int(amnt) / 3)
-                    users[juid]['total'] += round(int(amnt) / 3)
-                    await ctx.send(f'{ctx.message.author.mention}, you won {str(round(amnt / 3))} points')
-                if(e == 2):
-                    users[juid]['points'] += round(int(amnt) / 3)
-                    users[juid]['total'] += round(int(amnt) / 3)
-                    await ctx.send(f'{ctx.message.author.mention}, you won {str(round(amnt / 3))} points')
-                if(e == 3):
-                    users[juid]['points'] += round(int(amnt) / 3)
-                    users[juid]['total'] += round(int(amnt) / 3)
-                    await ctx.send(f'{ctx.message.author.mention}, you won {str(round(amnt / 3))} points')
-                if(e == 4):
-                    users[juid]['points'] -= int(amnt)
-                    await ctx.send(f'{ctx.message.author.mention}, you lost {str(amnt)} points')
+                if(j == 1):
+                    users[juid]['points'] += int(amnt) * 10
+                    users[juid]['total'] += int(amnt) * 10
+                    await ctx.send(f'{ctx.message.author.mention}, you hit the jackpot and won {str(int(amnt) * 10)} points!')
+                else:
+                    if(e == 1):
+                        users[juid]['points'] += round(int(amnt) / 3)
+                        users[juid]['total'] += round(int(amnt) / 3)
+                        await ctx.send(f'{ctx.message.author.mention}, you won {str(round(amnt / 3))} points')
+                    if(e == 2):
+                        users[juid]['points'] += round(int(amnt) / 3)
+                        users[juid]['total'] += round(int(amnt) / 3)
+                        await ctx.send(f'{ctx.message.author.mention}, you won {str(round(amnt / 3))} points')
+                    if(e == 3):
+                        users[juid]['points'] += round(int(amnt) / 3)
+                        users[juid]['total'] += round(int(amnt) / 3)
+                        await ctx.send(f'{ctx.message.author.mention}, you won {str(round(amnt / 3))} points')
+                    if(e == 4):
+                        users[juid]['points'] -= int(amnt)
+                        await ctx.send(f'{ctx.message.author.mention}, you lost {str(amnt)} points')
             else:
                 await ctx.send(f"{ctx.message.author.mention}, you don't have enough points to do that")
         else:
