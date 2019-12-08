@@ -154,7 +154,7 @@ async def pay(ctx, amnt, use: discord.User):
     juid = str(ctx.message.author.id)
 
     if amnt == 'half':
-        amnt = round(roundusers[juid]['points'] / 2)
+        amnt = round(users[juid]['points'] / 2)
     if amnt == 'all':
         amnt = users[juid]['points']
 
