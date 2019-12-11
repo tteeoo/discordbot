@@ -51,6 +51,7 @@ async def on_message(message):
                 users[juid] = {}
                 users[juid]['points'] = 500
                 users[juid]['total'] = 500
+                users[juid]['coin'] = 0
                 await message.channel.send(f'{message.author.mention}, created new profile with 500 points')
     except IndexError:  # blank message
         ...
@@ -98,7 +99,9 @@ async def bal(ctx):
         if int(total) > 999999999999999999999999999999:
             total = '{:.2e}'.format(Decimal(total))
 
-        await ctx.send(f'{ctx.message.author.mention}, you have {point} points and {total} total earnings')
+        coin = users[juid]['coin']
+
+        await ctx.send(f'{ctx.message.author.mention}, you have {point} points, {total} total earnings, and {coin} coin')
 
 # ping
 @bot.command()
@@ -179,6 +182,84 @@ async def pay(ctx, amnt, use: discord.User):
     with open('users.json', 'w') as f:
         json.dump(users, f)
 
+# coin
+@bot.command()
+async def coin(ctx, *args):
+    with open('users.json', 'r') as f:
+        users = json.load(f)
+
+    juid = str(ctx.message.author.id)
+
+    go = []
+
+    tpoints = 0
+    for key in users:
+        tpoints += users[key]['points']
+
+    value = round(tpoints / len(users))
+
+    print(args)
+
+    try:
+        for a in args:
+            go.append(a)
+
+        if go[0] == 'buy':
+            try:
+                try:
+                    amnt = int(go[1])
+                except:
+                    if amnt == 'max':
+                        amnt = round(int(users[juid]['points']) / value)
+
+                if amnt > 0:
+                    if (amnt * value) <= users[juid]['points']:
+                        users[juid]['points'] -= (amnt * value)
+                        users[juid]['coin'] += amnt
+                        await ctx.send(f'{ctx.message.author.mention}, bought {amnt} coins for {value} each, losing {amnt * value} points')
+                    else:
+                        await ctx.send(f"{ctx.message.author.mention}, you don't have enough points to do that")
+                else:
+                    await ctx.send(f'{ctx.message.author.mention}, you can only buy a postive integer of coin')
+            except:
+                await ctx.send(f'{ctx.message.author.mention}, you can only buy a postive integer of coin')
+
+
+        if go[0] == 'sell':
+            if go[1] == 'half':
+                amnt = round(users[juid]['coin'] / 2)
+            if go[1] == 'all':
+                amnt = users[juid]['coin']
+
+            try:
+                try:
+                    amnt = int(go[1])
+                except:
+                    if amnt == 'max':
+                        users[juid]['coin']
+
+                if amnt > 0:
+                    if amnt <= users[juid]['coin']:
+                        users[juid]['points'] += (amnt * value)
+                        users[juid]['coin'] -= amnt
+                        await ctx.send(f'{ctx.message.author.mention}, sold {amnt} coins for {value} each, gaining {amnt * value} points')
+                    else:
+                        await ctx.send(f"{ctx.message.author.mention}, you don't have enough coin to do that")
+                else:
+                    await ctx.send(f'{ctx.message.author.mention}, you can only sell a postive integer of coin')
+            except:
+                await ctx.send(f'{ctx.message.author.mention}, you can only sell a postive integer of coin')
+
+
+    except:
+        await ctx.send(f'{ctx.message.author.mention}, one coin is currently worth {value} points')
+
+
+    with open('users.json', 'w') as f:
+        json.dump(users, f)
+
+
+
 # lookup
 @bot.command()
 async def lookup(ctx, use: discord.User):
@@ -192,7 +273,9 @@ async def lookup(ctx, use: discord.User):
         if int(total) > 999999999999999999999999999999:
             total = "{:.2e}".format(Decimal(total))
 
-        await ctx.send(f'{ctx.message.author.mention}, {use.mention} has {point} points and {total} total earnings')
+        coin = users[str(use.id)]['coin']
+
+        await ctx.send(f'{ctx.message.author.mention}, {use.mention} has {point} points, {total} total earnings, and {coin} coin')
 
     except:
         await ctx.send(f'{ctx.message.author.mention}, {use.mention} does not have a profile')
@@ -207,6 +290,9 @@ async def flip(ctx, amnt):
 
     if amnt == 'all':
         amnt = users[juid]['points']
+
+    if amnt == 'half':
+        amnt = round(users[juid]['points'] / 2)
 
     try:
         amnt = int(amnt)
@@ -251,6 +337,9 @@ async def flip2(ctx, amnt):
 
     if amnt == 'all':
         amnt = users[juid]['points']
+
+    if amnt == 'half':
+        amnt = round(users[juid]['points'] / 2)
 
     try:
         if(int(amnt) > 0):
@@ -304,6 +393,9 @@ async def flip3(ctx, amnt):
 
     if amnt == 'all':
         amnt = users[juid]['points']
+
+    if amnt == 'half':
+        amnt = round(users[juid]['points'] / 2)
 
     try:
         amnt = int(amnt)
@@ -406,7 +498,14 @@ async def top(ctx):
     if int(fives) > 999999999999999999999999999999:
         fives = "{:.2e}".format(Decimal(fives))
 
-    await ctx.send("{}, the top players are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', firsts, '<@' + secondp + '>',  seconds, '<@' + thirdp + '>', thirds, '<@' + fourthp + '>', fourths, '<@' + fivep + '>', fives))
+    firstp = bot.get_user(int(firstp))
+    secondp = bot.get_user(int(secondp))
+    thirdp = bot.get_user(int(thirdp))
+    fourthp = bot.get_user(int(fourthp))
+    fivep = bot.get_user(int(fivep))
+
+
+    await ctx.send("{}, the top players are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, firstp, firsts, secondp, seconds, thirdp, thirds, fourthp, fourths, fivep, fives))
 
 
 # servertop
@@ -488,13 +587,27 @@ async def servertop(ctx):
             fives = "{:.2e}".format(Decimal(fives))
 
     if(len(order2) == 2):
-        await ctx.send("{}, the top players on your server are: \n \n {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', firsts, '<@' + secondp + '>',  seconds))
+        firstp = bot.get_user(int(firstp))
+        secondp = bot.get_user(int(secondp))
+        await ctx.send("{}, the top players on your server are: \n \n {} ```{} points``` {} ```{} points```".format(user.mention, firstp, firsts, secondp,  seconds))
     if(len(order2) == 3):
-        await ctx.send("{}, the top players on your server are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', firsts, '<@' + secondp + '>',  seconds, '<@' + thirdp + '>', thirds))
+        firstp = bot.get_user(int(firstp))
+        secondp = bot.get_user(int(secondp))
+        thirdp = bot.get_user(int(thirdp))
+        await ctx.send("{}, the top players on your server are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, firstp, firsts, secondp,  seconds, thirdp, thirds))
     if(len(order2) == 4):
-        await ctx.send("{}, the top players on your server are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', firsts, '<@' + secondp + '>',  seconds, '<@' + thirdp + '>', thirds, '<@' + fourthp + '>', fourths))
+        firstp = bot.get_user(int(firstp))
+        secondp = bot.get_user(int(secondp))
+        thirdp = bot.get_user(int(thirdp))
+        fourthp = bot.get_user(int(fourthp))
+        await ctx.send("{}, the top players on your server are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, firstp, firsts, secondp,  seconds, thirdp, thirds, fourthp, fourths))
     if(len(order2) >= 5):
-        await ctx.send("{}, the top players on your server are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, '<@' + firstp + '>', firsts, '<@' + secondp + '>',  seconds, '<@' + thirdp + '>', thirds, '<@' + fourthp + '>', fourths, '<@' + fivep + '>', fives))
+        firstp = bot.get_user(int(firstp))
+        secondp = bot.get_user(int(secondp))
+        thirdp = bot.get_user(int(thirdp))
+        fourthp = bot.get_user(int(fourthp))
+        fivep = bot.get_user(int(fivep))
+        await ctx.send("{}, the top players on your server are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, firstp, firsts, secondp, seconds, thirdp, thirds, fourthp, fourths, fivep, fives))
 
 # help
 @bot.command()
@@ -523,14 +636,16 @@ The bot is currently in development and many more features are soon to come`
   `- Displays the top 5 players on the current server`
 **.lookup (person)**
   `- Looks up a person's balance`
-**.pay (amount) (person)**
+**.pay (amount/all/half) (person)**
   `- Pays a person an amount of points`
-**.flip (amount)**
+**.flip (amount/all/half)**
   `- 50% chance to win an amount of points, 50% chance to lose the amount of points`
-**.flip2 (amount)**
+**.flip2 (amount/all/half)**
   `- 10% chance to win an amount of points squared, 90% chance to lose the amount squared`
-**.flip3 (amount)**
+**.flip3 (amount/all/half)**
   `- 75% chance to win one third an amount of points, 25% chance to lose the amount`
+ **.coin (buy/sell) (amount/(max for buying)/(all/half for selling))**
+   `- buy or sell an amount of coin, one coin is worth the average amount of points per user (.coin by itself for the value)`
  **.rng (integer) (greater integer)**
   `- Generates a random number between two numbers`
  **.help**
