@@ -8,6 +8,8 @@ Users gain points, and then can gamble with points, as well as pay other users, 
 Points of course, are independent of the server and will transfer from server to server
 
 The bot is currently in development and many more features are soon to come
+Anyone is free to fork, reproduce, or pull the code; This bot may serve as a template for bots of its nature
+Pardon the lazy commit messages
 
 Features in the works:
 
@@ -21,6 +23,8 @@ Features in the works:
   - Discord server: https://discordapp.com/invite/TJjQmUp
 
 # <a href="https://discordapp.com/api/oauth2/authorize?client_id=650477168702259220&permissions=8&scope=bot">Invite the bot</a> 
+
+<hr>
 
 # Commands
 
