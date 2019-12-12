@@ -5,14 +5,18 @@
 ## Isosceles is a server economy bot that gives points to users when they chat in servers, along with many other commands.
 
 Users gain points, and then can gamble with points, as well as pay other users, and see leadboards
+
 Points of course, are independent of the server and will transfer from server to server
 
 The bot is currently in development and many more features are soon to come
+
 Anyone is free to fork, reproduce, or pull the code; This bot may serve as a template for bots of its nature
-Pardon the lazy commit messages
 
-Features in the works:
+Pardon the lazy commit messages, whenever it says "ran" I am transfering from the server to my development computer, then I implement the update and push it back to the server with the message for the update.
 
+**Features in the works:**
+
+  - Bug squashing
   - Server moderation
   - Reddit integration
   - And more! Suggestions are welcome on the discord server
