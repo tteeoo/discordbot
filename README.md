@@ -1,4 +1,4 @@
-# Official repo of the isosceles discord bot
+# isosceles discord bot
 
 **Some of the bot's code is very messy, as I wrote some of the functions a long time ago, but they work.**
 
@@ -44,25 +44,29 @@ Features in the works:
 
   - Looks up a person's balance
   
-**.pay (amount) (person)**
+**.pay (amount/all/half) (person)**
 
   - Pays a person an amount of points
   
-**.flip (amount)**
+**.flip (amount/all/half)**
 
   - 50% chance to win an amount of points, 50% chance to lose the amount of points
   
-**.flip2 (amount)**
+**.flip2 (amount/all/half)**
 
   - 10% chance to win an amount of points squared, 90% chance to lose the amount squared
   
-**.flip3 (amount)**
+**.flip3 (amount/all/half)**
 
   - 75% chance to win one third an amount of points, 25% chance to lose the amount
   
  **.rng (integer) (greater integer)**
 
   - Generates a random number between two numbers
+  
+ **.coin (buy/sell) (amount/(all/half for sell)/(max for buy))**
+
+  - coin is another currency besides points; the value is equal to the average points per user; it is bought and sold for its point value
   
  **.help**
 
