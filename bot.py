@@ -38,24 +38,24 @@ async def on_message(message):
     with open('users.json', 'r') as f:
         users = json.load(f)
     juid = str(message.author.id)
-    try:
-        if message.content[0] != '.':
-            if juid in users:
-                if(users[juid]['points'] == 0):
-                    pnts = 20
-                else:
-                    pnts = round(9 / users[juid]['points'] * 20 + 1)
-                await add_points(users, juid, pnts)
-        else:
-            if juid not in users:
-                users[juid] = {}
-                users[juid]['points'] = 500
-                users[juid]['total'] = 500
-                users[juid]['coin'] = 0
-                await message.channel.send(f'{message.author.mention}, created new profile with 500 points')
-    except IndexError:  # blank message
-        ...
-
+    if message.author.bot == False:
+        try:
+            if message.content[0] != '.':
+                if juid in users:
+                    if(users[juid]['points'] == 0):
+                        pnts = 20
+                    else:
+                        pnts = round(9 / users[juid]['points'] * 20 + 1)
+                    await add_points(users, juid, pnts)
+            else:
+                if juid not in users:
+                    users[juid] = {}
+                    users[juid]['points'] = 500
+                    users[juid]['total'] = 500
+                    users[juid]['coin'] = 0
+                    await message.channel.send(f'{message.author.mention}, created new profile with 500 points')
+        except IndexError:  # blank message
+            ...
     # write json files
     with open('users.json', 'w') as f:
         json.dump(users, f)
@@ -100,6 +100,9 @@ async def bal(ctx):
             total = '{:.2e}'.format(Decimal(total))
 
         coin = users[juid]['coin']
+
+        if int(coin) > 999999999999999999999999999999:
+            coin = '{:.2e}'.format(Decimal(coin))
 
         await ctx.send(f'{ctx.message.author.mention}, you have {point} points, {total} total earnings, and {coin} coin')
 
@@ -161,24 +164,28 @@ async def pay(ctx, amnt, use: discord.User):
     if amnt == 'all':
         amnt = users[juid]['points']
 
-    try:
-        if(int(amnt) > 0):
-            amnt = int(amnt)
+    if(int(amnt) <= 1000000):
 
-            if(int(amnt) <= users[str(ctx.message.author.id)]['points']):
-                users[str(ctx.message.author.id)]['points'] -= int(amnt)
-                users[str(use.id)]['points'] += int(amnt)
-                users[str(use.id)]['total'] += int(amnt)
+        try:
+            if(int(amnt) > 0):
+                amnt = int(amnt)
 
-                await ctx.send(f"{ctx.message.author.mention}, paid {use.mention} {amnt} points")
+                if(int(amnt) <= users[str(ctx.message.author.id)]['points']):
+                    users[str(ctx.message.author.id)]['points'] -= int(amnt)
+                    users[str(use.id)]['points'] += int(amnt)
+                    users[str(use.id)]['total'] += int(amnt)
 
+                    await ctx.send(f"{ctx.message.author.mention}, paid {use.mention} {amnt} points")
+
+                else:
+                    await ctx.send(f"{ctx.message.author.mention}, you don't have enough points to do that")
             else:
-                await ctx.send(f"{ctx.message.author.mention}, you don't have enough points to do that")
-        else:
+                await ctx.send(f"{ctx.message.author.mention}, you can only pay integers greater than 0")
+        except ValueError:
             await ctx.send(f"{ctx.message.author.mention}, you can only pay integers greater than 0")
-    except ValueError:
-        await ctx.send(f"{ctx.message.author.mention}, you can only pay integers greater than 0")
 
+    else:
+        await ctx.send(f"{ctx.message.author.mention}, there is a transaction limit of 1 million points")
     with open('users.json', 'w') as f:
         json.dump(users, f)
 
@@ -195,7 +202,6 @@ async def coin(ctx, *args):
     tpoints = 0
     for key in users:
         tpoints += users[key]['points']
-
     value = round(tpoints / len(users))
 
     print(args)
@@ -206,19 +212,33 @@ async def coin(ctx, *args):
 
         if go[0] == 'buy':
             try:
-                try:
+                if go[1] == 'max':
+                    amnt = int(round(int(users[juid]['points']) / value))
+                else:
                     amnt = int(go[1])
-                except:
-                    if amnt == 'max':
-                        amnt = round(int(users[juid]['points']) / value)
-
+                no = False
                 if amnt > 0:
-                    if (amnt * value) <= users[juid]['points']:
-                        users[juid]['points'] -= (amnt * value)
-                        users[juid]['coin'] += amnt
-                        await ctx.send(f'{ctx.message.author.mention}, bought {amnt} coins for {value} each, losing {amnt * value} points')
-                    else:
-                        await ctx.send(f"{ctx.message.author.mention}, you don't have enough points to do that")
+                    lost = 0
+                    first = True
+                    for i in range(amnt):
+                        tpoints = 0
+                        for key in users:
+                            tpoints += users[key]['points']
+                        value = round(tpoints / len(users))
+                        if value <= users[juid]['points']:
+                            users[juid]['points'] -= value
+                            lost += value
+                            users[juid]['coin'] += 1
+                            if int(value) > 999999999999999999999999999999:
+                                value = '{:.2e}'.format(Decimal(value))
+                            first = False
+                        else:
+                            break
+                        if first == True and value > users[juid]['points']:
+                            await ctx.send(f"{ctx.message.author.mention}, you don't have enough points to do that")
+                            break
+                    if first == False:
+                        await ctx.send(f'{ctx.message.author.mention}, bought {amnt} coin for {lost} points')
                 else:
                     await ctx.send(f'{ctx.message.author.mention}, you can only buy a postive integer of coin')
             except:
@@ -227,22 +247,27 @@ async def coin(ctx, *args):
 
         if go[0] == 'sell':
             if go[1] == 'half':
-                amnt = round(users[juid]['coin'] / 2)
-            if go[1] == 'all':
-                amnt = users[juid]['coin']
+                amnt = round(int(users[juid]['coin']) / 2)
+            elif go[1] == 'all':
+                amnt = int(users[juid]['coin'])
+            else:
+                amnt = int(go[1])
 
             try:
-                try:
-                    amnt = int(go[1])
-                except:
-                    if amnt == 'max':
-                        users[juid]['coin']
-
                 if amnt > 0:
                     if amnt <= users[juid]['coin']:
-                        users[juid]['points'] += (amnt * value)
-                        users[juid]['coin'] -= amnt
-                        await ctx.send(f'{ctx.message.author.mention}, sold {amnt} coins for {value} each, gaining {amnt * value} points')
+                        gained = 0
+                        for i in range(amnt):
+                            tpoints = 0
+                            for key in users:
+                                tpoints += users[key]['points']
+                            value = round(tpoints / len(users))
+                            users[juid]['points'] += value
+                            gained += value
+                            users[juid]['coin'] -= 1
+                            if int(value) > 999999999999999999999999999999:
+                                value = '{:.2e}'.format(Decimal(value))
+                        await ctx.send(f'{ctx.message.author.mention}, sold {amnt} coin for {gained} points')
                     else:
                         await ctx.send(f"{ctx.message.author.mention}, you don't have enough coin to do that")
                 else:
@@ -272,8 +297,9 @@ async def lookup(ctx, use: discord.User):
         total = users[str(use.id)]['total']
         if int(total) > 999999999999999999999999999999:
             total = "{:.2e}".format(Decimal(total))
-
         coin = users[str(use.id)]['coin']
+        if int(coin) > 999999999999999999999999999999:
+            coin = "{:.2e}".format(Decimal(coin))
 
         await ctx.send(f'{ctx.message.author.mention}, {use.mention} has {point} points, {total} total earnings, and {coin} coin')
 
