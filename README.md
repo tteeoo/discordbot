@@ -30,7 +30,7 @@ Pardon the lazy commit messages, whenever it says "ran" I am transfering from th
 
 <hr>
 
-# Deploy using docker? [DockerHub](https://hub.docker.com/r/cool2zap/superior-bot) 
+# Deploy using docker? [DockerHub](https://hub.docker.com/r/cool2zap/isosceles-bot) 
 ```sh
 docker run -d -e TOKEN="your token" cool2zap/isosceles-bot
 ```
