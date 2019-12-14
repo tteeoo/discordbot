@@ -7,9 +7,8 @@ from decimal import Decimal
 import discord
 from discord.ext import commands
 
-file = open("../TOKEN.txt", "r")
-TOKEN = str(file.read(59))
-print(TOKEN)
+#replaced token.txt to .env mainly for docker.
+TOKEN = os.getenv("TOKEN")
 
 bot = commands.Bot(command_prefix='.')
 bot.remove_command('help')

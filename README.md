@@ -30,6 +30,18 @@ Pardon the lazy commit messages, whenever it says "ran" I am transfering from th
 
 <hr>
 
+# Run without docker  
+create .env file and add this to it.
+```
+TOKEN=your token here
+```
+Then run bot.py
+
+# Deploy using docker? [DockerHub](https://hub.docker.com/r/cool2zap/isosceles-bot) 
+```sh
+docker run -d -e TOKEN="your token" cool2zap/isosceles-bot
+```
+
 # Commands
 
 **.bal**
