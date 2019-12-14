@@ -1,4 +1,4 @@
-FROM python:3.8.0
+FROM arm32v6/python:3.8.0
 
 COPY . /app
 WORKDIR /app
