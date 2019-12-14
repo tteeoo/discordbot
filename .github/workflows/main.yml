@@ -8,6 +8,6 @@ jobs:
     - name: Publish to Docker Repository
       uses: elgohr/Publish-Docker-Github-Action@master
       with:
-        name: cool2zap/isosceles-bot
+        name: teodorian/discordbot
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }} 
