@@ -7,12 +7,31 @@ from decimal import Decimal
 import discord
 from discord.ext import commands
 
+import dbl
+
 file = open("../TOKEN.txt", "r")
 TOKEN = str(file.read(59))
+file = open("../DBL", "r")
+API = str(file.read(155))
 print(TOKEN)
+print(API)
 
 bot = commands.Bot(command_prefix='.')
 bot.remove_command('help')
+
+class TopGG(commands.Cog):
+    """Handles interactions with the top.gg API"""
+
+    def __init__(self, bot):
+        self.bot = bot
+        self.token = API # set this to your DBL token
+        self.dblpy = dbl.DBLClient(self.bot, self.token, autopost=True) # Autopost will post your guild count every 30 minutes
+
+    async def on_guild_post():
+        print("Server count posted successfully")
+
+def setup(bot):
+    bot.add_cog(TopGG(bot))
 
 # on start
 @bot.event
@@ -229,21 +248,19 @@ async def coin(ctx, *args):
                             users[juid]['points'] -= value
                             lost += value
                             users[juid]['coin'] += 1
-                            if int(value) > 999999999999999999999999999999:
-                                value = '{:.2e}'.format(Decimal(value))
+                            if lost > 999999999999999999999999999999:
+                                lost = '{:.2e}'.format(Decimal(value))
                             first = False
                         else:
                             break
-                        if first == True and value > users[juid]['points']:
-                            await ctx.send(f"{ctx.message.author.mention}, you don't have enough points to do that")
-                            break
+                    if first == True:
+                        await ctx.send(f"{ctx.message.author.mention}, you don't have enough points to do that")
                     if first == False:
                         await ctx.send(f'{ctx.message.author.mention}, bought {amnt} coin for {lost} points')
                 else:
                     await ctx.send(f'{ctx.message.author.mention}, you can only buy a postive integer of coin')
             except:
                 await ctx.send(f'{ctx.message.author.mention}, you can only buy a postive integer of coin')
-
 
         if go[0] == 'sell':
             if go[1] == 'half':
@@ -275,14 +292,11 @@ async def coin(ctx, *args):
             except:
                 await ctx.send(f'{ctx.message.author.mention}, you can only sell a postive integer of coin')
 
-
     except:
         await ctx.send(f'{ctx.message.author.mention}, one coin is currently worth {value} points')
 
-
     with open('users.json', 'w') as f:
         json.dump(users, f)
-
 
 
 # lookup
@@ -329,12 +343,13 @@ async def flip(ctx, amnt):
             if(int(amnt) <= users[juid]['points']):
                 if(j == 1):
                     if(int(amnt) * int(amnt) > 999999999999999999999999999999):
-                        winnings = str("{:.2e}".format(Decimal(int(amnt) * int(amnt))))
+                        winnings = str("{:.2e}".format(
+                            Decimal(int(amnt) * int(amnt))))
                     else:
-                        winnings = str(int(amnt) * int(amnt))
+                        winnings = str(int(amnt) * 10)
 
-                    users[juid]['points'] += int(amnt) * int(amnt)
-                    users[juid]['total'] += int(amnt) * int(amnt)
+                    users[juid]['points'] += int(amnt) * 10
+                    users[juid]['total'] += int(amnt) * 10
                     await ctx.send(f'{ctx.message.author.mention}, you hit the jackpot and won {winnings} points!')
                 else:
                     if(e == 1):
@@ -375,7 +390,8 @@ async def flip2(ctx, amnt):
             if(int(amnt) <= users[juid]['points']):
                 if(j == 1):
                     if(int(amnt) * int(amnt) * int(amnt) > 999999999999999999999999999999):
-                        winnings = str("{:.2e}".format(Decimal(int(amnt) * int(amnt) * int(amnt))))
+                        winnings = str("{:.2e}".format(
+                            Decimal(int(amnt) * int(amnt) * int(amnt))))
                     else:
                         winnings = str(int(amnt) * int(amnt) * int(amnt))
 
@@ -384,7 +400,8 @@ async def flip2(ctx, amnt):
                     await ctx.send(f'{ctx.message.author.mention}, you hit the jackpot and won {winnings} points!')
                 else:
                     if(int(amnt) * int(amnt) > 999999999999999999999999999999):
-                        winnings = str("{:.2e}".format(Decimal(int(amnt) * int(amnt))))
+                        winnings = str("{:.2e}".format(
+                            Decimal(int(amnt) * int(amnt))))
                     else:
                         winnings = str(int(amnt) * int(amnt))
 
@@ -529,7 +546,6 @@ async def top(ctx):
     thirdp = bot.get_user(int(thirdp))
     fourthp = bot.get_user(int(fourthp))
     fivep = bot.get_user(int(fivep))
-
 
     await ctx.send("{}, the top players are: \n \n {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points``` {} ```{} points```".format(user.mention, firstp, firsts, secondp, seconds, thirdp, thirds, fourthp, fourths, fivep, fives))
 
