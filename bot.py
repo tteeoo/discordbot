@@ -62,16 +62,27 @@ async def on_message(message):
             if message.content[0] != '.':
                 if juid in users:
                     if(users[juid]['points'] == 0):
-                        pnts = 20
+                        users[juid]['points'] += 20
+                        users[juid]['total'] += 20
                     else:
-                        pnts = round(9 / users[juid]['points'] * 20 + 1)
-                    await add_points(users, juid, pnts)
+                        users[juid]['points'] += round(9 / users[juid]['points'] * 20 + 1)
+                        users[juid]['total'] += round(9 / users[juid]['points'] * 20 + 1)
+
+                    if(users['The Casino']['points'] == 0):
+                        users['The Casino']['points'] += 20
+                        users['The Casino']['total'] += 20
+                    else:
+                        users['The Casino']['points'] += round(9 / users[juid]['points'] * 20 + 1)
+                        users['The Casino']['total'] += round(9 / users[juid]['points'] * 20 + 1)
             else:
                 if juid not in users:
                     users[juid] = {}
                     users[juid]['points'] = 500
                     users[juid]['total'] = 500
-                    users[juid]['coin'] = 0
+                    users[juid]['stock'] = 0
+
+                    users['The Casino']['points'] += 500
+                    users['The Casino']['total'] += 500
                     await message.channel.send(f'{message.author.mention}, created new profile with 500 points')
         except IndexError:  # blank message
             ...
@@ -89,16 +100,6 @@ async def on_message(message):
 async def on_message_desentlete(message):
     print(
         f'message deleted: {message.guild}: {message.channel}: {message.author}: {message.content}')
-
-# add points
-
-
-async def add_points(users, juid, pnts):
-    users[juid]['points'] += pnts
-    users[juid]['total'] += pnts
-
-    print(f'added {pnts} to {juid}')
-
 # bal
 @bot.command()
 async def bal(ctx):
@@ -118,12 +119,13 @@ async def bal(ctx):
         if int(total) > 999999999999999999999999999999:
             total = '{:.2e}'.format(Decimal(total))
 
-        coin = users[juid]['coin']
+        stock = users[juid]['stock']
 
-        if int(coin) > 999999999999999999999999999999:
-            coin = '{:.2e}'.format(Decimal(coin))
 
-        await ctx.send(f'{ctx.message.author.mention}, you have {point} points, {total} total earnings, and {coin} coin')
+        if int(stock) > 999999999999999999999999999999:
+            stock = '{:.2e}'.format(Decimal(stock))
+
+        await ctx.send(f'{ctx.message.author.mention}, you have {point} points, {total} total earnings, and {stock} stock')
 
 # ping
 @bot.command()
@@ -160,9 +162,8 @@ async def give(ctx, amount, use: discord.User):
     with open('users.json', 'r') as f:
         users = json.load(f)
 
-    if(ctx.message.author.id == 258771223473815553 or ctx.message.author.id == 546851070224105493):
+    if(ctx.message.author.id == 258771223473815553):
         users[str(use.id)]['points'] += int(amount)
-        users[str(use.id)]['total'] += int(amount)
         await ctx.send(f'{ctx.message.author.mention}, gave {amount} points to {use.mention}')
     else:
         await ctx.send(f'{ctx.message.author.mention}, unauthorized')
@@ -208,12 +209,12 @@ async def pay(ctx, amnt, use: discord.User):
     with open('users.json', 'w') as f:
         json.dump(users, f)
 
-# coin
+# stock
 @bot.command()
-async def coin(ctx, *args):
+async def stock(ctx, *args):
     with open('users.json', 'r') as f:
         users = json.load(f)
-
+    wrong = False
     juid = str(ctx.message.author.id)
 
     go = []
@@ -221,80 +222,44 @@ async def coin(ctx, *args):
     tpoints = 0
     for key in users:
         tpoints += users[key]['points']
-    value = round(tpoints / len(users))
-
+    value = int(round(tpoints / len(users)) / 100)
     print(args)
 
     try:
         for a in args:
             go.append(a)
 
+        amnt = int(go[1])
+
         if go[0] == 'buy':
-            try:
-                if go[1] == 'max':
-                    amnt = int(round(int(users[juid]['points']) / value))
+            if amnt > 0:
+                if users[juid]['points'] >= value * amnt:
+                    users[juid]['stock'] += 1
+                    users['The Casino']['points'] += value * amnt
+                    users['The Casino']['total'] += value * amnt
+                    users[juid]['points'] -= value * amnt
+                    await ctx.send(f"{ctx.message.author.mention}, bought {amnt} shares for {value} each")
                 else:
-                    amnt = int(go[1])
-                no = False
-                if amnt > 0:
-                    lost = 0
-                    first = True
-                    for i in range(amnt):
-                        tpoints = 0
-                        for key in users:
-                            tpoints += users[key]['points']
-                        value = round(tpoints / len(users))
-                        if value <= users[juid]['points']:
-                            users[juid]['points'] -= value
-                            lost += value
-                            users[juid]['coin'] += 1
-                            if lost > 999999999999999999999999999999:
-                                lost = '{:.2e}'.format(Decimal(value))
-                            first = False
-                        else:
-                            break
-                    if first == True:
-                        await ctx.send(f"{ctx.message.author.mention}, you don't have enough points to do that")
-                    if first == False:
-                        await ctx.send(f'{ctx.message.author.mention}, bought {amnt} coin for {lost} points')
-                else:
-                    await ctx.send(f'{ctx.message.author.mention}, you can only buy a postive integer of coin')
-            except:
-                await ctx.send(f'{ctx.message.author.mention}, you can only buy a postive integer of coin')
+                    await ctx.send(f"{ctx.message.author.mention}, you don't have enough points to do that")
+            else:
+                await ctx.send(f'{ctx.message.author.mention}, you can only buy a postive integer of stock')
+
 
         if go[0] == 'sell':
-            if go[1] == 'half':
-                amnt = round(int(users[juid]['coin']) / 2)
-            elif go[1] == 'all':
-                amnt = int(users[juid]['coin'])
-            else:
-                amnt = int(go[1])
-
-            try:
-                if amnt > 0:
-                    if amnt <= users[juid]['coin']:
-                        gained = 0
-                        for i in range(amnt):
-                            tpoints = 0
-                            for key in users:
-                                tpoints += users[key]['points']
-                            value = round(tpoints / len(users))
-                            users[juid]['points'] += value
-                            gained += value
-                            users[juid]['coin'] -= 1
-                            if int(value) > 999999999999999999999999999999:
-                                value = '{:.2e}'.format(Decimal(value))
-                        await ctx.send(f'{ctx.message.author.mention}, sold {amnt} coin for {gained} points')
-                    else:
-                        await ctx.send(f"{ctx.message.author.mention}, you don't have enough coin to do that")
+            if amnt > 0:
+                if users[juid]['stock'] >= amnt:
+                    users[juid]['stock'] -= amnt
+                    users['The Casino']['points'] -= value * amnt
+                    users[juid]['total'] += value * amnt
+                    users[juid]['points'] += value * amnt
+                    await ctx.send(f"{ctx.message.author.mention}, sold {amnt} shares for {value} each")
                 else:
-                    await ctx.send(f'{ctx.message.author.mention}, you can only sell a postive integer of coin')
-            except:
-                await ctx.send(f'{ctx.message.author.mention}, you can only sell a postive integer of coin')
+                    await ctx.send(f"{ctx.message.author.mention}, you don't have enough shares to do that")
+            else:
+                await ctx.send(f'{ctx.message.author.mention}, you can only sell a postive integer of stock')
 
-    except:
-        await ctx.send(f'{ctx.message.author.mention}, one coin is currently worth {value} points')
-
+    except (IndexError, ValueError):
+        await ctx.send(f'{ctx.message.author.mention}, one stock is currently worth {value} points, the casino has {users["The Casino"]["points"]} points')
     with open('users.json', 'w') as f:
         json.dump(users, f)
 
@@ -311,11 +276,11 @@ async def lookup(ctx, use: discord.User):
         total = users[str(use.id)]['total']
         if int(total) > 999999999999999999999999999999:
             total = "{:.2e}".format(Decimal(total))
-        coin = users[str(use.id)]['coin']
-        if int(coin) > 999999999999999999999999999999:
-            coin = "{:.2e}".format(Decimal(coin))
+        stock = users[str(use.id)]['stock']
+        if int(stock) > 999999999999999999999999999999:
+            stock = "{:.2e}".format(Decimal(stock))
 
-        await ctx.send(f'{ctx.message.author.mention}, {use.mention} has {point} points, {total} total earnings, and {coin} coin')
+        await ctx.send(f'{ctx.message.author.mention}, {use.mention} has {point} points, {total} total earnings, and {stock} stock')
 
     except:
         await ctx.send(f'{ctx.message.author.mention}, {use.mention} does not have a profile')
@@ -341,23 +306,31 @@ async def flip(ctx, amnt):
             e = random.randint(1, 2)
             j = random.randint(1, 128)
             if(int(amnt) <= users[juid]['points']):
-                if(j == 1):
-                    if(int(amnt) * int(amnt) > 999999999999999999999999999999):
-                        winnings = str("{:.2e}".format(
-                            Decimal(int(amnt) * int(amnt))))
-                    else:
-                        winnings = str(int(amnt) * 10)
+                if amnt <= users['The Casino']['points']:
+                    if(j == 1):
+                        if(int(amnt) * int(amnt) > 999999999999999999999999999999):
+                            winnings = str("{:.2e}".format(
+                                Decimal(int(amnt) * int(amnt))))
+                        else:
+                            winnings = str(int(amnt) * 10)
 
-                    users[juid]['points'] += int(amnt) * 10
-                    users[juid]['total'] += int(amnt) * 10
-                    await ctx.send(f'{ctx.message.author.mention}, you hit the jackpot and won {winnings} points!')
-                else:
-                    if(e == 1):
-                        await add_points(users, juid, amnt)
-                        await ctx.send(f'{ctx.message.author.mention}, you won {str(amnt)} points')
+                        users[juid]['points'] += int(amnt) * 10
+                        users[juid]['total'] += int(amnt) * 10
+                        users['The Casino']['points'] -= int(amnt) * 10
+                        await ctx.send(f'{ctx.message.author.mention}, you hit the jackpot and won {winnings} points!')
                     else:
-                        users[juid]['points'] -= int(amnt)
-                        await ctx.send(f'{ctx.message.author.mention}, you lost {str(amnt)} points')
+                        if(e == 1):
+                            users[juid]['points'] += amnt
+                            users[juid]['total'] += amnt
+                            users['The Casino']['points'] -= amnt
+                            await ctx.send(f'{ctx.message.author.mention}, you won {str(amnt)} points')
+                        else:
+                            users[juid]['points'] -= amnt
+                            users['The Casino']['points'] += amnt
+                            users['The Casino']['total'] += amnt
+                            await ctx.send(f'{ctx.message.author.mention}, you lost {str(amnt)} points')
+                else:
+                    await ctx.send(f"{ctx.message.author.mention}, the casino doesn't have enough points")
             else:
                 await ctx.send(f"{ctx.message.author.mention}, you don't have enough points to do that")
         else:
@@ -388,34 +361,43 @@ async def flip2(ctx, amnt):
             e = random.randint(1, 10)
             j = random.randint(1, 128)
             if(int(amnt) <= users[juid]['points']):
-                if(j == 1):
-                    if(int(amnt) * int(amnt) * int(amnt) > 999999999999999999999999999999):
-                        winnings = str("{:.2e}".format(
-                            Decimal(int(amnt) * int(amnt) * int(amnt))))
-                    else:
-                        winnings = str(int(amnt) * int(amnt) * int(amnt))
-
-                    users[juid]['points'] += int(amnt) * int(amnt) * int(amnt)
-                    users[juid]['total'] += int(amnt) * int(amnt) * int(amnt)
-                    await ctx.send(f'{ctx.message.author.mention}, you hit the jackpot and won {winnings} points!')
-                else:
-                    if(int(amnt) * int(amnt) > 999999999999999999999999999999):
-                        winnings = str("{:.2e}".format(
-                            Decimal(int(amnt) * int(amnt))))
-                    else:
-                        winnings = str(int(amnt) * int(amnt))
-
-                    if(e == 1):
-                        users[juid]['points'] += int(amnt) * int(amnt)
-                        users[juid]['total'] += int(amnt) * int(amnt)
-                        await ctx.send(f'{ctx.message.author.mention}, you won {winnings} points')
-                    else:
-                        if(int(amnt) * int(amnt) < users[juid]['points']):
-                            users[juid]['points'] -= int(amnt) * int(amnt)
-                            await ctx.send(f'{ctx.message.author.mention}, you lost {winnings} points')
+                if amnt * amnt <= users['The Casino']['points']:
+                    if(j == 1):
+                        if(int(amnt) * int(amnt) * int(amnt) > 999999999999999999999999999999):
+                            winnings = str("{:.2e}".format(
+                                Decimal(int(amnt) * int(amnt) * 10)))
                         else:
-                            users[juid]['points'] = 0
-                            await ctx.send(f'{ctx.message.author.mention}, you lost {winnings} points')
+                            winnings = str(int(amnt) * int(amnt) * 10)
+
+                        users[juid]['points'] += int(amnt) * int(amnt) * 10
+                        users[juid]['total'] += int(amnt) * int(amnt) * 10
+                        users['The Casino']['points'] -= int(amnt) * int(amnt) * 10
+                        await ctx.send(f'{ctx.message.author.mention}, you hit the jackpot and won {winnings} points!')
+                    else:
+                        if(int(amnt) * int(amnt) > 999999999999999999999999999999):
+                            winnings = str("{:.2e}".format(
+                                Decimal(int(amnt) * int(amnt))))
+                        else:
+                            winnings = str(int(amnt) * int(amnt))
+
+                        if(e == 1):
+                            users[juid]['points'] += int(amnt) * int(amnt)
+                            users[juid]['total'] += int(amnt) * int(amnt)
+                            users['The Casino']['points'] -= int(amnt) * int(amnt)
+                            await ctx.send(f'{ctx.message.author.mention}, you won {winnings} points')
+                        else:
+                            if(int(amnt) * int(amnt) < users[juid]['points']):
+                                users[juid]['points'] -= int(amnt) * int(amnt)
+                                users['The Casino']['points'] += int(amnt) * int(amnt)
+                                users['The Casino']['total'] += int(amnt) * int(amnt)
+                                await ctx.send(f'{ctx.message.author.mention}, you lost {winnings} points')
+                            else:
+                                users['The Casino']['points'] += users[juid]['points']
+                                users['The Casino']['total'] += users[juid]['points']
+                                await ctx.send(f'{ctx.message.author.mention}, you lost {users[juid]["points"]} points')
+                                users[juid]['points'] = 0
+                else:
+                    await ctx.send(f"{ctx.message.author.mention}, the casino doesn't have enough points")
             else:
                 await ctx.send(f"{ctx.message.author.mention}, you don't have enough points to do that")
         else:
@@ -447,26 +429,25 @@ async def flip3(ctx, amnt):
             j = random.randint(1, 128)
 
             if(int(amnt) <= users[juid]['points']):
-                if(j == 1):
-                    users[juid]['points'] += int(amnt) * 10
-                    users[juid]['total'] += int(amnt) * 10
-                    await ctx.send(f'{ctx.message.author.mention}, you hit the jackpot and won {str(int(amnt) * 10)} points!')
+                if amnt * amnt <= users['The Casino']['points']:
+                    if(j == 1):
+                        users[juid]['points'] += int(amnt) * 10
+                        users[juid]['total'] += int(amnt) * 10
+                        users['The Casino']['points'] -= int(amnt) * 10
+                        await ctx.send(f'{ctx.message.author.mention}, you hit the jackpot and won {str(int(amnt) * 10)} points!')
+                    else:
+                        if(e == 4):
+                            users[juid]['points'] -= int(amnt)
+                            users['The Casino']['points'] += int(amnt)
+                            users['The Casino']['total'] += int(amnt)
+                            await ctx.send(f'{ctx.message.author.mention}, you lost {str(amnt)} points')
+                        else:
+                            users[juid]['points'] += round(int(amnt) / 3)
+                            users[juid]['total'] += round(int(amnt) / 3)
+                            users['The Casino']['points'] -= round(int(amnt) / 3)
+                            await ctx.send(f'{ctx.message.author.mention}, you won {str(round(amnt / 3))} points')
                 else:
-                    if(e == 1):
-                        users[juid]['points'] += round(int(amnt) / 3)
-                        users[juid]['total'] += round(int(amnt) / 3)
-                        await ctx.send(f'{ctx.message.author.mention}, you won {str(round(amnt / 3))} points')
-                    if(e == 2):
-                        users[juid]['points'] += round(int(amnt) / 3)
-                        users[juid]['total'] += round(int(amnt) / 3)
-                        await ctx.send(f'{ctx.message.author.mention}, you won {str(round(amnt / 3))} points')
-                    if(e == 3):
-                        users[juid]['points'] += round(int(amnt) / 3)
-                        users[juid]['total'] += round(int(amnt) / 3)
-                        await ctx.send(f'{ctx.message.author.mention}, you won {str(round(amnt / 3))} points')
-                    if(e == 4):
-                        users[juid]['points'] -= int(amnt)
-                        await ctx.send(f'{ctx.message.author.mention}, you lost {str(amnt)} points')
+                    await ctx.send(f"{ctx.message.author.mention}, the casino doesn't have enough points")
             else:
                 await ctx.send(f"{ctx.message.author.mention}, you don't have enough points to do that")
         else:
@@ -483,7 +464,7 @@ async def top(ctx):
     user = ctx.message.author
     with open('users.json', 'r') as f:
         users = json.load(f)
-
+    del users['The Casino']
     order2 = sorted(
         users.items(), key=lambda val: val[1]['points'], reverse=True)
     firstp = str(order2[0])[2:]
@@ -557,6 +538,7 @@ async def servertop(ctx):
     guild = ctx.message.guild
     with open('users.json', 'r') as f:
         users = json.load(f)
+    del users['The Casino']
     q = 0
     guildMem = list()
     guildPoints = list()
@@ -686,8 +668,8 @@ The bot is currently in development and many more features are soon to come`
   `- 10% chance to win an amount of points squared, 90% chance to lose the amount squared`
 **.flip3 (amount/all/half)**
   `- 75% chance to win one third an amount of points, 25% chance to lose the amount`
- **.coin (buy/sell) (amount/(max for buying)/(all/half for selling))**
-   `- buy or sell an amount of coin, one coin is worth the average amount of points per user (.coin by itself for the value)`
+ **.stock (buy/sell) (amount)**
+   `- buy or sell an amount of stock, one stock is worth the average amount of points per user (.stock by itself for the value)`
  **.rng (integer) (greater integer)**
   `- Generates a random number between two numbers`
  **.help**
