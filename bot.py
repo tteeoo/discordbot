@@ -5,7 +5,7 @@ import random
 from decimal import Decimal
 
 import discord
-from discord.ext import commands
+from discord.ext import tasks, commands
 
 import dbl
 
@@ -15,28 +15,47 @@ file = open("../DBL", "r")
 API = str(file.read(155))
 print(TOKEN)
 print(API)
-
 bot = commands.Bot(command_prefix='.')
 bot.remove_command('help')
 
-class TopGG(commands.Cog):
-    """Handles interactions with the top.gg API"""
+token = API # set this to your DBL token
+dblpy = dbl.DBLClient(bot, token, autopost=True) # Autopost will post your guild count every 30 minutes
 
-    def __init__(self, bot):
-        self.bot = bot
-        self.token = API # set this to your DBL token
-        self.dblpy = dbl.DBLClient(self.bot, self.token, autopost=True) # Autopost will post your guild count every 30 minutes
+async def on_guild_post():
+    print("Server count posted successfully")
 
-    async def on_guild_post():
-        print("Server count posted successfully")
+looptime = random.randint(15, 30)
 
-def setup(bot):
-    bot.add_cog(TopGG(bot))
+with open('users.json', 'r') as f:
+    users = json.load(f)
+if int(round((users['The Casino']['points'] * 100) / 1000000000)) >=100:
+    value = random.randint(1,5) * int(str(int(round((users['The Casino']['points'] * 100) / 1000000000)) - 99) + '00') + random.randint(1,100)
+else:
+    value = random.randint(1,5) * int(str(int(round((users['The Casino']['points'] * 100) / 1000000000)) - 101) + '00') + random.randint(1,100)
+
+# loop
+@tasks.loop(minutes=looptime)
+async def timer():
+    with open('users.json', 'r') as f:
+        users = json.load(f)
+    global value, looptime
+    print('test')
+    await bot.change_presence(status=discord.Status.online, activity=discord.Streaming(name='.help on ' + str(len(bot.guilds)) + ' servers', url='https://twitch.tv/#'))
+
+    users['The Casino']['points'] += users['The Casino']['queue']
+    users['The Casino']['queue'] = 0
+
+    if int(round((users['The Casino']['points'] * 100) / 1000000000)) >=100:
+        value = random.randint(1,5) * int(str(int(round((users['The Casino']['points'] * 100) / 1000000000)) - 99) + '00') + random.randint(1,100)
+    else:
+        value = random.randint(1,5) * int(str(int(round((users['The Casino']['points'] * 100) / 1000000000)) - 101) + '00') + random.randint(1,100)
+    looptime = random.randint(15, 30)
 
 # on start
 @bot.event
 async def on_ready():
     print('online')
+    timer.start()
     await bot.change_presence(status=discord.Status.online, activity=discord.Streaming(name='.help on ' + str(len(bot.guilds)) + ' servers', url='https://twitch.tv/#'))
 
 # on sent
@@ -201,7 +220,7 @@ async def pay(ctx, amnt, use: discord.User):
                     await ctx.send(f"{ctx.message.author.mention}, you don't have enough points to do that")
             else:
                 await ctx.send(f"{ctx.message.author.mention}, you can only pay integers greater than 0")
-        except ValueError:
+        except Error:
             await ctx.send(f"{ctx.message.author.mention}, you can only pay integers greater than 0")
 
     else:
@@ -214,7 +233,7 @@ async def pay(ctx, amnt, use: discord.User):
 async def stock(ctx, *args):
     with open('users.json', 'r') as f:
         users = json.load(f)
-    wrong = False
+    global value
     juid = str(ctx.message.author.id)
 
     go = []
@@ -222,7 +241,6 @@ async def stock(ctx, *args):
     tpoints = 0
     for key in users:
         tpoints += users[key]['points']
-    value = int(round(tpoints / len(users)) / 100)
     print(args)
 
     try:
@@ -234,8 +252,8 @@ async def stock(ctx, *args):
         if go[0] == 'buy':
             if amnt > 0:
                 if users[juid]['points'] >= value * amnt:
-                    users[juid]['stock'] += 1
-                    users['The Casino']['points'] += value * amnt
+                    users[juid]['stock'] += amnt
+                    users['The Casino']['queue'] += value * amnt
                     users['The Casino']['total'] += value * amnt
                     users[juid]['points'] -= value * amnt
                     await ctx.send(f"{ctx.message.author.mention}, bought {amnt} shares for {value} each")
@@ -249,7 +267,7 @@ async def stock(ctx, *args):
             if amnt > 0:
                 if users[juid]['stock'] >= amnt:
                     users[juid]['stock'] -= amnt
-                    users['The Casino']['points'] -= value * amnt
+                    users['The Casino']['queue'] -= value * amnt
                     users[juid]['total'] += value * amnt
                     users[juid]['points'] += value * amnt
                     await ctx.send(f"{ctx.message.author.mention}, sold {amnt} shares for {value} each")
@@ -677,3 +695,4 @@ The bot is currently in development and many more features are soon to come`
     await ctx.send(f'{ctx.message.author.mention}, messaged you the help menu')
 
 bot.run(TOKEN)
+s.run()
