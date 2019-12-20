@@ -28,27 +28,41 @@ looptime = random.randint(15, 30)
 
 with open('users.json', 'r') as f:
     users = json.load(f)
-if int(round((users['The Casino']['points'] * 100) / 1000000000)) >=100:
-    value = random.randint(1,5) * int(str(int(round((users['The Casino']['points'] * 100) / 1000000000)) - 99) + '00') + random.randint(1,100)
+for key in users:
+    users[key]['transac'] = 0
+with open('users.json', 'w') as f:
+    json.dump(users, f)
+if int(users['The Casino']['points'] * 100 / 1000000000) >=100:
+    value = int(users['The Casino']['points'] * 100 / 1000000000) + random.randint(0,int(users['The Casino']['points'] * 100 / 1000000000) + 100)
+elif int(users['The Casino']['points'] * 100 / 1000000000) >=10:
+    value = int(users['The Casino']['points'] * 100 / 1000000000) - random.randint(0,int(users['The Casino']['points'] * 100 / 1000000000) - 10)
 else:
-    value = random.randint(1,5) * int(str(int(round((users['The Casino']['points'] * 100) / 1000000000)) - 101) + '00') + random.randint(1,100)
+    value = int(users['The Casino']['points'] * 100 / 1000000000) 
+
+    
 
 # loop
 @tasks.loop(minutes=looptime)
 async def timer():
     with open('users.json', 'r') as f:
         users = json.load(f)
+    
     global value, looptime
-    print('test')
+    
+    print('RUNNING TASK')
+    
     await bot.change_presence(status=discord.Status.online, activity=discord.Streaming(name='.help on ' + str(len(bot.guilds)) + ' servers', url='https://twitch.tv/#'))
 
-    users['The Casino']['points'] += users['The Casino']['queue']
-    users['The Casino']['queue'] = 0
-
-    if int(round((users['The Casino']['points'] * 100) / 1000000000)) >=100:
-        value = random.randint(1,5) * int(str(int(round((users['The Casino']['points'] * 100) / 1000000000)) - 99) + '00') + random.randint(1,100)
+    if int(users['The Casino']['points'] * 100 / 1000000000) >=100:
+        value = int(users['The Casino']['points'] * 100 / 1000000000) + random.randint(0,int(users['The Casino']['points'] * 100 / 1000000000) + 100)
+    elif int(users['The Casino']['points'] * 100 / 1000000000) >=10:
+        value = int(users['The Casino']['points'] * 100 / 1000000000) - random.randint(0,int(users['The Casino']['points'] * 100 / 1000000000) - 10)
     else:
-        value = random.randint(1,5) * int(str(int(round((users['The Casino']['points'] * 100) / 1000000000)) - 101) + '00') + random.randint(1,100)
+        value = int(users['The Casino']['points'] * 100 / 1000000000) 
+
+    for key in users:
+        users[key]['transac'] = 0
+    
     looptime = random.randint(15, 30)
 
 # on start
@@ -99,7 +113,7 @@ async def on_message(message):
                     users[juid]['points'] = 500
                     users[juid]['total'] = 500
                     users[juid]['stock'] = 0
-
+                    users[juid]['transac'] = 0
                     users['The Casino']['points'] += 500
                     users['The Casino']['total'] += 500
                     await message.channel.send(f'{message.author.mention}, created new profile with 500 points')
@@ -246,35 +260,53 @@ async def stock(ctx, *args):
     try:
         for a in args:
             go.append(a)
-
-        amnt = int(go[1])
+        if go[1] == 'all' and go[0] == 'sell':
+            amnt = users[juid]['stock']
+        elif go[1] == 'half' and go[0] == 'sell':
+            amnt = int(users[juid]['stock'] / 2)
+        elif go[1] == 'max' and go[0] == 'buy':
+            amnt = int(users[juid]['points'] / value)
+        else:
+            amnt = int(go[1])
 
         if go[0] == 'buy':
-            if amnt > 0:
-                if users[juid]['points'] >= value * amnt:
-                    users[juid]['stock'] += amnt
-                    users['The Casino']['queue'] += value * amnt
-                    users['The Casino']['total'] += value * amnt
-                    users[juid]['points'] -= value * amnt
-                    await ctx.send(f"{ctx.message.author.mention}, bought {amnt} shares for {value} each")
+            if users[juid]['transac'] < 8:
+                if amnt > 0:
+                    if users[juid]['points'] >= value * amnt:
+                        users[juid]['stock'] += amnt
+                        users['The Casino']['points'] += value * amnt
+                        users['The Casino']['total'] += value * amnt
+                        users[juid]['points'] -= value * amnt
+                        users[juid]['transac'] += 1
+                        await ctx.send(f"{ctx.message.author.mention}, bought {amnt} shares for {value} each")
+                    else:
+                        await ctx.send(f"{ctx.message.author.mention}, you don't have enough points to do that")
                 else:
-                    await ctx.send(f"{ctx.message.author.mention}, you don't have enough points to do that")
+                    await ctx.send(f'{ctx.message.author.mention}, you can only buy a postive integer of stock')
             else:
-                await ctx.send(f'{ctx.message.author.mention}, you can only buy a postive integer of stock')
+                await ctx.send(f'{ctx.message.author.mention}, there is an 8 transaction limit for stocks until the value changes') 
+
 
 
         if go[0] == 'sell':
-            if amnt > 0:
-                if users[juid]['stock'] >= amnt:
-                    users[juid]['stock'] -= amnt
-                    users['The Casino']['queue'] -= value * amnt
-                    users[juid]['total'] += value * amnt
-                    users[juid]['points'] += value * amnt
-                    await ctx.send(f"{ctx.message.author.mention}, sold {amnt} shares for {value} each")
+            if users[juid]['transac'] < 8:
+                if amnt > 0:
+                    if users[juid]['stock'] >= amnt:
+                        if users['The Casino']['points'] >= value * amnt:
+                            users[juid]['stock'] -= amnt
+                            users['The Casino']['points'] -= value * amnt
+                            users[juid]['total'] += value * amnt
+                            users[juid]['points'] += value * amnt
+                            users[juid]['transac'] += 1
+                            await ctx.send(f"{ctx.message.author.mention}, sold {amnt} shares for {value} each")
+                        else:
+                            await ctx.send(f"{ctx.message.author.mention}, the casino doesn't have enough points")
+                    else:
+                        await ctx.send(f"{ctx.message.author.mention}, you don't have enough shares to do that")
                 else:
-                    await ctx.send(f"{ctx.message.author.mention}, you don't have enough shares to do that")
+                    await ctx.send(f'{ctx.message.author.mention}, you can only sell a postive integer of stock')
             else:
-                await ctx.send(f'{ctx.message.author.mention}, you can only sell a postive integer of stock')
+                await ctx.send(f'{ctx.message.author.mention}, there is an 8 transaction limit for stocks until the value changes') 
 
     except (IndexError, ValueError):
         await ctx.send(f'{ctx.message.author.mention}, one stock is currently worth {value} points, the casino has {users["The Casino"]["points"]} points')
