@@ -19,7 +19,7 @@ bot = commands.Bot(command_prefix='.')
 bot.remove_command('help')
 
 token = API # set this to your DBL token
-dblpy = dbl.DBLClient(bot, token, autopost=True) # Autopost will post your guild count every 30 minutes
+#dblpy = dbl.DBLClient(bot, token, autopost=True) # Autopost will post your guild count every 30 minutes
 
 async def on_guild_post():
     print("Server count posted successfully")
@@ -33,11 +33,11 @@ for key in users:
 with open('users.json', 'w') as f:
     json.dump(users, f)
 if int(users['The Casino']['points'] * 100 / 1000000000) >=100:
-    value = int(users['The Casino']['points'] * 100 / 1000000000) + random.randint(0,int(users['The Casino']['points'] * 100 / 1000000000) + 100)
+    value = int(users['The Casino']['points'] * 100 / 1000000000) + random.randint(0,int(users['The Casino']['points'] * 100 / 1000000000) + 100) + 1
 elif int(users['The Casino']['points'] * 100 / 1000000000) >=10:
-    value = int(users['The Casino']['points'] * 100 / 1000000000) - random.randint(0,int(users['The Casino']['points'] * 100 / 1000000000) - 10)
+    value = int(users['The Casino']['points'] * 100 / 1000000000) - random.randint(0,int(users['The Casino']['points'] * 100 / 1000000000) - 10) + 1
 else:
-    value = int(users['The Casino']['points'] * 100 / 1000000000) 
+    value = int(users['The Casino']['points'] * 100 / 1000000000) + 1
 
     
 
@@ -54,15 +54,17 @@ async def timer():
     await bot.change_presence(status=discord.Status.online, activity=discord.Streaming(name='.help on ' + str(len(bot.guilds)) + ' servers', url='https://twitch.tv/#'))
 
     if int(users['The Casino']['points'] * 100 / 1000000000) >=100:
-        value = int(users['The Casino']['points'] * 100 / 1000000000) + random.randint(0,int(users['The Casino']['points'] * 100 / 1000000000) + 100)
+        value = int(users['The Casino']['points'] * 100 / 1000000000) + random.randint(0,int(users['The Casino']['points'] * 100 / 1000000000) + 100) + 1
     elif int(users['The Casino']['points'] * 100 / 1000000000) >=10:
-        value = int(users['The Casino']['points'] * 100 / 1000000000) - random.randint(0,int(users['The Casino']['points'] * 100 / 1000000000) - 10)
+        value = int(users['The Casino']['points'] * 100 / 1000000000) - random.randint(0,int(users['The Casino']['points'] * 100 / 1000000000) - 10) + 1
     else:
-        value = int(users['The Casino']['points'] * 100 / 1000000000) 
+        value = int(users['The Casino']['points'] * 100 / 1000000000) + 1
 
     for key in users:
         users[key]['transac'] = 0
-    
+    with open ('users.json', 'w') as f:
+        json.dump(users, f)
+
     looptime = random.randint(15, 30)
 
 # on start
